@@ -87,18 +87,11 @@ configureNvidiaWayland() {
 
   runAsRoot dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda
 
-  echo "Configuring NVIDIA kernel parameters for Wayland..."
-  # Appending wayland specific nvidia-drm modesetting and fbdev to grub config
-  runAsRoot sed -i 's/GRUB_CMDLINE_LINUX="/GRUB_CMDLINE_LINUX="nvidia-drm.modeset=1 nvidia-drm.fbdev=1 /' /etc/default/grub
-  runAsRoot grub2-mkconfig -o /etc/grub2.cfg
-
-  echo "Configuring NVIDIA Container Toolkit (CDI) for Podman..."
   runAsRoot curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo -o /etc/yum.repos.d/nvidia-container-toolkit.repo
 
   runAsRoot dnf install -y nvidia-container-toolkit
-  runAsRoot systemctl enable --now nvidia-cdi-refresh.service
 
-  echo "NVIDIA Drivers and Container Toolkit configured."
+  echo "NVIDIA Drivers and Container Toolkit installed."
 }
 
 # installFlatpaks uses Flathub to install requested GUI applications.
@@ -221,7 +214,7 @@ set +u
 initOS
 verifySupported
 installFedoraPackages
-configureNvidiaWayland
-installFlatpaks
+installNVIDIA
+installApps
 configureStarshipAndZed
 finalize
