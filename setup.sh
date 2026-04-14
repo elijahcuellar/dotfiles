@@ -85,9 +85,9 @@ installFedoraPackages() {
   echo "System packages installed."
 }
 
-# configureNvidiaWayland installs the NVIDIA drivers, configures Wayland,
-# and sets up the Podman CDI via nvidia-container-toolkit.
-configureNvidiaWayland() {
+# configureNvidiaWayland installs the NVIDIA drivers
+# and nvidia-container-toolkit.
+installNVIDIA() {
   echo "Installing NVIDIA Drivers and Container Toolkit..."
 
   local fedora_version
@@ -230,7 +230,7 @@ set +u
 initOS
 verifySupported
 installFedoraPackages
-installNVIDIA
+configureNvidiaWayland
 installApps
 configureStarshipAndZed
 finalize
