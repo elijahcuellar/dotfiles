@@ -130,15 +130,17 @@ installApps() {
 configureStarshipAndZed() {
   echo "Configuring Starship and Zed settings..."
 
-  mkdir -p "$HOME/.config/zed"
+  printf "eval \"\$(starship init bash)\"" > "$HOME/.bashrc"
 
   if [[ -f "${DOTFILES_DIR}/starship.toml" ]]; then
+    mkdir -p "$HOME/.config"
     cp "${DOTFILES_DIR}/starship.toml" "$HOME/.config/starship.toml"
   else
     echo "[WARNING] starship.toml not found in ${DOTFILES_DIR}"
   fi
 
   if [[ -f "${DOTFILES_DIR}/settings.json" ]]; then
+    mkdir -p "$HOME/.config/zed"
     cp "${DOTFILES_DIR}/settings.json" "$HOME/.config/zed/settings.json"
   else
     echo "[WARNING] settings.json not found in ${DOTFILES_DIR}"
