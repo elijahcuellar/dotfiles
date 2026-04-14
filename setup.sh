@@ -57,6 +57,15 @@ verifySupported() {
   fi
 }
 
+# removeDefaultBloat remove all unnecessary packages,
+# it also removes packages for better alternatives
+removeDefaultBloat() {
+  echo "Cleaning system of default bloat.."
+  runAsRoot dnf remove -y \
+    gnome-tour gnome-connections gnome-contacts gnome-weather \
+    gnome-maps gnome-calendar gnome-boxes libreoffice* firefox
+}
+
 # installFedoraPackages installs all core system dependencies via DNF.
 installFedoraPackages() {
   echo "Installing system packages via DNF..."
@@ -97,18 +106,19 @@ configureNvidiaWayland() {
   echo "NVIDIA Drivers and Container Toolkit installed."
 }
 
-# installFlatpaks uses Flathub to install requested GUI applications.
-installFlatpaks() {
-  echo "Installing Obsidian and Zed via Flatpak..."
+# installApps installs requested GUI applications.
+installApps() {
+  echo "Installing Firefox, Obsidian, and Zed..."
 
   if [ "${HAS_FLATPAK}" != "true" ]; then
-    echo "Flatpak not found. Installing flatpak via DNF..."
+    echo "Flatpak not found. Installing flatpak..."
     runAsRoot dnf install -y flatpak
   fi
 
   # Ensure the flathub remote is configured
   runAsRoot flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
+  runAsRoot flatpak install -y flathub org.mozilla.firefox
   runAsRoot flatpak install -y flathub md.obsidian.Obsidian
   runAsRoot flatpak install -y flathub dev.zed.Zed
 
