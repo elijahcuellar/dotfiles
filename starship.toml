@@ -1,0 +1,39 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+add_newline = true
+
+# Alternative icons:   󰛸  
+format = """
+[░▒▓](#3a3d45)\
+[ 󰛸 ](bg:#3a3d45 fg:#ffffff)\
+$directory\
+[](#3a3d45) \
+$git_branch\
+$git_status\
+$character
+"""
+
+[directory]
+style = "bg:#3a3d45 fg:#90b4fe"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈔 "
+"Downloads" = "󰇚 "
+"Music" = "󰎆 "
+"Pictures" = "󰋩 "
+
+[git_branch]
+symbol = ""
+style = "fg:#a6accd"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "fg:#ed8796"
+format = '[($all_status$ahead_behind )]($style)'
+
+[character]
+success_symbol = '[❯](bold #8bd5ca)'
+error_symbol = '[❯](bold #ed8796)'
