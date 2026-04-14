@@ -120,9 +120,10 @@ installApps() {
 
   runAsRoot flatpak install -y flathub org.mozilla.firefox
   runAsRoot flatpak install -y flathub md.obsidian.Obsidian
-  runAsRoot flatpak install -y flathub dev.zed.Zed
+  runAsRoot flatpak update -y
 
-  echo "Flatpak applications installed."
+  curl -s -f https://zed.dev/install.sh | sh
+  echo "Applications installed."
 }
 
 # configureStarshipAndZed links/copies dotfile configurations into the home directory.
