@@ -68,7 +68,10 @@ installFedoraPackages() {
   runAsRoot dnf install -y gh --repo gh-cli
 
   # Install other CLI tools and fonts
-  runAsRoot dnf install -y just starship fira-code-fonts
+  runAsRoot dnf copr enable -y atim/starship
+  runAsRoot dnf install -y just starship
+  # TODO: install FiraCode Nerd Font
+  # https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz
 
   echo "System packages installed."
 }
