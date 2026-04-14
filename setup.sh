@@ -164,10 +164,15 @@ help () {
   echo -e "\t[--debug]    ->> run with debug output"
 }
 
-# cleanup temporary files
-cleanup() {
+# perform any final actions
+finalize() {
   # Add temporary directory cleanup here if any are created in the future
-  :
+
+  runAsRoot /usr/sbin/kmodgenca
+  runAsRoot mokutil --import /etc/pki/akmods/certs/public_key.der
+
+  echo "A reboot is required to enroll NVIDIA modules signing key for Secure Boot."
+  echo "After reboot, run `mokutil --test-key /etc/pki/akmods/certs/public_key.der` to check if the key is enrolled."
 }
 
 # Execution
@@ -219,4 +224,4 @@ installFedoraPackages
 configureNvidiaWayland
 installFlatpaks
 configureStarshipAndZed
-cleanup
+finalize
