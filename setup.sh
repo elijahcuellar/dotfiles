@@ -41,8 +41,9 @@ runAsRoot() {
 
 # execute runs a command in the background with a loading spinner
 execute() {
-  local msg="$1"
-  shift
+  local active_msg="$1"
+  local done_msg="$2"
+  shift 2
 
   "$@" >/dev/null 2>&1 &
   local pid=$!
@@ -51,7 +52,7 @@ execute() {
   local i=0
 
   while kill -0 $pid 2>/dev/null; do
-    printf "\r\033[36m%s\033[0m %s\033[K" "${spinner[i]}" "$msg"
+    printf "\r\033[36m%s\033[0m %s\033[K" "${spinner[i]}" "$active_msg"
     i=$(( (i + 1) % 10 ))
     sleep $delay
   done
@@ -60,14 +61,24 @@ execute() {
   local exit_code=$?
 
   if [ $exit_code -eq 0 ]; then
-    printf "\r\033[32m✔\033[0m %s\033[K\n" "$msg"
+    printf "\r\033[32m✔\033[0m %s\033[K\n" "$done_msg"
   else
-    printf "\r\033[31m✖\033[0m %s (failed)\033[K\n" "$msg"
+    printf "\r\033[31m✖\033[0m %s (failed)\033[K\n" "$active_msg"
   fi
   return $exit_code
 }
 
-# verifySupported checks that the necessary tools are present.
+# Print section header.
+print_section() {
+  echo -e "\n\033[1;34m==> ${1}\033[0m"
+}
+
+# Print warning message.
+print_warning() {
+  echo -e "\033[1;33m[!] ${1}\033[0m"
+}
+
+# Verify dependencies.
 verifySupported() {
   if [ "${HAS_DNF}" != "true" ]; then
     echo "[ERROR] Could not find dnf. This script requires Fedora's DNF package manager."
@@ -88,78 +99,72 @@ verifySupported() {
 # removeDefaultBloat remove all unnecessary packages,
 # it also removes packages with better alternatives
 removeDefaultBloat() {
-  echo "Cleaning system of default bloat..."
-  execute "Removing unnecessary default packages" runAsRoot dnf remove -y \
+  print_section "Cleaning system of default bloat..."
+  execute "Removing unnecessary default packages..." "Removed unnecessary default packages." runAsRoot dnf remove -y \
     gnome-tour gnome-connections gnome-contacts gnome-weather \
     gnome-maps gnome-calendar gnome-boxes libreoffice\* firefox
 }
 
 # installSystemPackages installs all core system dependencies.
 installSystemPackages() {
-  echo "Installing system packages via DNF..."
-  execute "Updating DNF packages" runAsRoot dnf update -y
+  print_section "Installing System Packages..."
+  execute "Updating DNF packages..." "Updated DNF packages." runAsRoot dnf update -y
 
   # Install official GitHub CLI via DNF5 explicitly
-  execute "Installing DNF5 plugins" runAsRoot dnf install -y dnf5-plugins
-  execute "Adding GitHub CLI repo" runAsRoot dnf config-manager addrepo --from-repofile=https://cli.github.com/packages/rpm/gh-cli.repo
-  execute "Installing GitHub CLI" runAsRoot dnf install -y gh --repo gh-cli
+  execute "Installing DNF5 plugins..." "Installed DNF5 plugins." runAsRoot dnf install -y dnf5-plugins
+  execute "Adding GitHub CLI repo..." "Added GitHub CLI repo." runAsRoot dnf config-manager addrepo --from-repofile=https://cli.github.com/packages/rpm/gh-cli.repo
+  execute "Installing GitHub CLI..." "Installed GitHub CLI." runAsRoot dnf install -y gh --repo gh-cli
 
   # Install other CLI tools and fonts
-  execute "Enabling Starship COPR" runAsRoot dnf copr enable -y atim/starship
-  execute "Installing just, starship" runAsRoot dnf install -y just starship
+  execute "Enabling Starship COPR..." "Enabled Starship COPR." runAsRoot dnf copr enable -y atim/starship
+  execute "Installing just, starship..." "Installed just, starship." runAsRoot dnf install -y just starship
 
-  echo "Installing FiraCode Nerd Font..."
   local FONT_DIR="$HOME/.local/share/fonts/FiraCode"
   mkdir -p "$FONT_DIR"
-  execute "Downloading and extracting FiraCode" sh -c "curl -s -L 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz' | tar -xJ -C '$FONT_DIR'"
-  execute "Updating font cache" fc-cache -r
-
-  echo "System packages installed."
+  execute "Downloading and extracting FiraCode..." "Downloaded and extracted FiraCode." sh -c "curl -s -L 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz' | tar -xJ -C '$FONT_DIR'"
+  execute "Updating font cache..." "Updated font cache." fc-cache -r
 }
 
 # installHardwareDrivers installs the required hardware drivers
 # and container toolkits.
 installHardwareDrivers() {
-  echo "Installing NVIDIA Drivers and Container Toolkit..."
+  print_section "Installing Hardware Drivers..."
 
   local fedora_version
   fedora_version=$(rpm -E %fedora)
 
-  execute "Adding RPM Fusion repositories" runAsRoot dnf install -y \
+  execute "Adding RPM Fusion repositories..." "Added RPM Fusion repositories." runAsRoot dnf install -y \
     "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm" \
     "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
 
-  execute "Installing NVIDIA drivers (akmod, cuda)" runAsRoot dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda
+  execute "Installing NVIDIA drivers (akmod, cuda)..." "Installed NVIDIA drivers (akmod, cuda)." runAsRoot dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda
 
-  execute "Adding NVIDIA container toolkit repo" runAsRoot sh -c "curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo -o /etc/yum.repos.d/nvidia-container-toolkit.repo"
+  execute "Adding NVIDIA container toolkit repo..." "Added NVIDIA container toolkit repo." runAsRoot sh -c "curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo -o /etc/yum.repos.d/nvidia-container-toolkit.repo"
 
-  execute "Installing NVIDIA container toolkit" runAsRoot dnf install -y nvidia-container-toolkit
-
-  echo "NVIDIA Drivers and Container Toolkit installed."
+  execute "Installing NVIDIA container toolkit..." "Installed NVIDIA container toolkit." runAsRoot dnf install -y nvidia-container-toolkit
 }
 
 # installApps installs requested GUI applications.
 installApps() {
-  echo "Installing Firefox, Obsidian, and Zed..."
+  print_section "Installing GUI Applications..."
 
   if [ "${HAS_FLATPAK}" != "true" ]; then
-    execute "Installing flatpak" runAsRoot dnf install -y flatpak
+    execute "Installing flatpak..." "Installed flatpak." runAsRoot dnf install -y flatpak
   fi
 
   # Ensure the flathub remote is configured
-  execute "Adding flathub remote" runAsRoot flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+  execute "Adding flathub remote..." "Added flathub remote." runAsRoot flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-  execute "Installing Firefox via flatpak" runAsRoot flatpak install -y flathub org.mozilla.firefox
-  execute "Installing Obsidian via flatpak" runAsRoot flatpak install -y flathub md.obsidian.Obsidian
-  execute "Updating flatpak packages" runAsRoot flatpak update -y
+  execute "Installing Firefox via flatpak..." "Installed Firefox via flatpak." runAsRoot flatpak install -y flathub org.mozilla.firefox
+  execute "Installing Obsidian via flatpak..." "Installed Obsidian via flatpak." runAsRoot flatpak install -y flathub md.obsidian.Obsidian
+  execute "Updating flatpak packages..." "Updated flatpak packages." runAsRoot flatpak update -y
 
-  execute "Installing Zed editor" sh -c "curl -s -f https://zed.dev/install.sh | sh"
-  echo "Applications installed."
+  execute "Installing Zed editor..." "Installed Zed editor." sh -c "curl -s -f https://zed.dev/install.sh | sh"
 }
 
 # configureDotfiles links/copies dotfile configurations into the home directory.
 configureDotfiles() {
-  echo "Configuring user settings and dotfiles..."
+  print_section "Configuring user settings and dotfiles..."
 
   if ! grep -q 'starship init bash' "$HOME/.bashrc"; then
     printf "\neval \"\$(starship init bash)\"\n" >> "$HOME/.bashrc"
@@ -178,8 +183,6 @@ configureDotfiles() {
   else
     echo "[WARNING] settings.json not found in ${DOTFILES_DIR}"
   fi
-
-  echo "Starship and Zed configured."
 }
 
 # cleanup cleans up any temporary files or state that should be removed on exit.
@@ -218,11 +221,14 @@ help () {
 finalize() {
   cleanup
 
-  runAsRoot /usr/sbin/kmodgenca
-  runAsRoot mokutil --import /etc/pki/akmods/certs/public_key.der
+  print_section "Finalizing Setup..."
+  execute "Generating AKMODS key..." "Generated AKMODS key." runAsRoot /usr/sbin/kmodgenca
+  execute "Importing MOK key..." "Imported MOK key." runAsRoot mokutil --import /etc/pki/akmods/certs/public_key.der
 
-  echo "A reboot is required to enroll NVIDIA modules signing key with Secure Boot."
-  echo "Run \`mokutil --test-key /etc/pki/akmods/certs/public_key.der\` to confirm the key is enrolled."
+  echo ""
+  print_warning "A reboot is required to enroll NVIDIA modules signing key with Secure Boot."
+  print_warning "Run \`mokutil --test-key /etc/pki/akmods/certs/public_key.der\` after reboot to confirm the key is enrolled."
+  echo ""
 }
 
 # Execution
