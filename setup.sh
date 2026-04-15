@@ -166,18 +166,18 @@ configureDotfiles() {
     printf "\neval \"\$(starship init bash)\"\n" >> "$HOME/.bashrc"
   fi
 
-  if [[ -f "${DOTFILES_DIR}/starship.toml" ]]; then
+  if [[ -f "${DOTFILES_DIR}/config/starship.toml" ]]; then
     mkdir -p "$HOME/.config"
-    cp "${DOTFILES_DIR}/starship.toml" "$HOME/.config/starship.toml"
+    cp "${DOTFILES_DIR}/config/starship.toml" "$HOME/.config/starship.toml"
   else
-    echo "[WARNING] starship.toml not found in ${DOTFILES_DIR}"
+    echo "[WARNING] starship.toml not found in ${DOTFILES_DIR}/config"
   fi
 
-  if [[ -f "${DOTFILES_DIR}/settings.json" ]]; then
+  if [[ -f "${DOTFILES_DIR}/config/zed/settings.json" ]]; then
     mkdir -p "$HOME/.config/zed"
-    cp "${DOTFILES_DIR}/settings.json" "$HOME/.config/zed/settings.json"
+    cp "${DOTFILES_DIR}/config/zed/settings.json" "$HOME/.config/zed/settings.json"
   else
-    echo "[WARNING] settings.json not found in ${DOTFILES_DIR}"
+    echo "[WARNING] settings.json not found in ${DOTFILES_DIR}/config/zed"
   fi
 }
 

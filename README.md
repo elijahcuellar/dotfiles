@@ -43,5 +43,5 @@ mokutil --test-key /etc/pki/akmods/certs/public_key.der
 ## Structure
 
 - `setup.sh`: The primary provisioning script.
-- `starship.toml`: Starship prompt configuration.
-- `settings.json`: Zed editor configuration.
+- `config/starship.toml`: Starship prompt configuration.
+- `config/zed/settings.json`: Zed editor configuration.
