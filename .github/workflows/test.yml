@@ -34,38 +34,28 @@ jobs:
 
       - name: Prepare Container Environment
         run: |
-          dnf update -y
+          set -euo pipefail
+
           # Install prerequisite utilities missing from minimal Fedora container images
-          dnf install -y sudo curl git dnf-plugins-core util-linux shadow-utils tar xz
-
-          # Create a non-root user to properly test script sudo escalations
-          useradd -m -s /bin/bash testuser
-          echo "testuser ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/testuser
-          chmod 0440 /etc/sudoers.d/testuser
-
-          # Assign workspace ownership to the test user
-          chown -R testuser:testuser ${{ github.workspace }}
+          dnf install -y --setopt=install_weak_deps=False --setopt=fastestmirror=True curl git dnf-plugins-core util-linux tar xz
 
       - name: Execute Provisioning Script
         # Running with --debug ensures verbose logs in GitHub Actions for easier troubleshooting
-        run: >
-          sudo -i -u testuser bash -c
-          "cd ${{ github.workspace }} && ./setup.sh --debug"
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
+          ./setup.sh --debug
 
       - name: Validate CLI Utilities Installation
         run: |
-          sudo -i -u testuser bash -c "
-            set -e
-            gh --version
-            just --version
-            starship --version
-          "
+          set -e
+          gh --version
+          just --version
+          starship --version
 
       - name: Validate Dotfile Configurations
         run: |
-          sudo -i -u testuser bash -c "
-            set -e
-            test -f ~/.config/starship.toml
-            test -f ~/.config/zed/settings.json
-            grep -q 'starship init bash' ~/.bashrc
-          "
+          set -e
+          test -f ~/.config/starship.toml
+          test -f ~/.config/zed/settings.json
+          grep -q 'starship init bash' ~/.bashrc
