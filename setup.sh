@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-# The install script is based off of the MIT-licensed script from glide,
-# the package manager for Go: https://github.com/Masterminds/glide.sh/blob/master/get
-# and heavily inspired by the Helm installation script architecture.
+# Inspired by Helm/Glide installers.
 
 : ${USE_SUDO:="true"}
 : ${DEBUG:="false"}
@@ -13,7 +11,7 @@ HAS_FLATPAK="$(type "flatpak" &> /dev/null && echo true || echo false)"
 HAS_CURL="$(type "curl" &> /dev/null && echo true || echo false)"
 HAS_SED="$(type "sed" &> /dev/null && echo true || echo false)"
 
-# initOS discovers the operating system for this system.
+# Verify OS compatibility.
 initOS() {
   OS=$(echo `uname`|tr '[:upper:]' '[:lower:]')
 
@@ -30,7 +28,7 @@ initOS() {
   fi
 }
 
-# runs the given command as root (detects if we are root already)
+# Run command as root.
 runAsRoot() {
   if [ $EUID -ne 0 -a "$USE_SUDO" = "true" ]; then
     sudo "${@}"
@@ -39,7 +37,7 @@ runAsRoot() {
   fi
 }
 
-# execute runs a command in the background with a loading spinner
+# Execute command with spinner.
 execute() {
   local active_msg="$1"
   local done_msg="$2"
@@ -96,8 +94,7 @@ verifySupported() {
   fi
 }
 
-# removeDefaultBloat remove all unnecessary packages,
-# it also removes packages with better alternatives
+# Remove default bloatware.
 removeDefaultBloat() {
   print_section "Cleaning system of default bloat..."
   execute "Removing unnecessary default packages..." "Removed unnecessary default packages." runAsRoot dnf remove -y \
@@ -105,7 +102,7 @@ removeDefaultBloat() {
     gnome-maps gnome-calendar gnome-boxes libreoffice\* firefox
 }
 
-# installSystemPackages installs all core system dependencies.
+# Install system packages.
 installSystemPackages() {
   print_section "Installing System Packages..."
   execute "Updating DNF packages..." "Updated DNF packages." runAsRoot dnf update -y
@@ -125,8 +122,7 @@ installSystemPackages() {
   execute "Updating font cache..." "Updated font cache." fc-cache -r
 }
 
-# installHardwareDrivers installs the required hardware drivers
-# and container toolkits.
+# Install NVIDIA drivers & toolkit.
 installHardwareDrivers() {
   print_section "Installing Hardware Drivers..."
 
@@ -144,7 +140,7 @@ installHardwareDrivers() {
   execute "Installing NVIDIA container toolkit..." "Installed NVIDIA container toolkit." runAsRoot dnf install -y nvidia-container-toolkit
 }
 
-# installApps installs requested GUI applications.
+# Install GUI apps.
 installApps() {
   print_section "Installing GUI Applications..."
 
@@ -162,7 +158,7 @@ installApps() {
   execute "Installing Zed editor..." "Installed Zed editor." sh -c "curl -s -f https://zed.dev/install.sh | sh"
 }
 
-# configureDotfiles links/copies dotfile configurations into the home directory.
+# Configure dotfiles.
 configureDotfiles() {
   print_section "Configuring user settings and dotfiles..."
 
@@ -185,13 +181,13 @@ configureDotfiles() {
   fi
 }
 
-# cleanup cleans up any temporary files or state that should be removed on exit.
+# Cleanup on exit.
 cleanup() {
   # Add temporary directory cleanup here if any are created in the future
   :
 }
 
-# fail_trap is executed if an error occurs.
+# Handle errors.
 fail_trap() {
   result=$?
   if [ "$result" != "0" ]; then
@@ -206,7 +202,7 @@ fail_trap() {
   exit $result
 }
 
-# help provides possible cli installation arguments
+# Show help.
 help () {
   echo -e "\033[1;34mSetup Script Usage\033[0m"
   echo
@@ -217,7 +213,7 @@ help () {
   echo -e "  \033[1;32m    --debug\033[0m                Run with debug output enabled"
 }
 
-# perform any final actions
+# Finalize setup.
 finalize() {
   cleanup
 
@@ -233,16 +229,16 @@ finalize() {
 
 # Execution
 
-# Stop execution on any error
+# Stop on error.
 trap "fail_trap" EXIT
 set -e
 
-# Set debug if desired
+# Set debug.
 if [ "${DEBUG}" == "true" ]; then
   set -x
 fi
 
-# Parsing input arguments (if any)
+# Parse arguments.
 export INPUT_ARGUMENTS="${@}"
 set -u
 while [[ $# -gt 0 ]]; do
