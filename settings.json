@@ -62,5 +62,6 @@
   },
   "gutter": {
     "min_line_number_digits": 0
-  }
+  },
+  "diff_view_style": "unified"
 }
