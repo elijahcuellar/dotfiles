@@ -6,24 +6,18 @@
 : ${DEBUG:="false"}
 : ${DOTFILES_DIR:="."}
 
-HAS_DNF="$(type "dnf" &> /dev/null && echo true || echo false)"
-HAS_FLATPAK="$(type "flatpak" &> /dev/null && echo true || echo false)"
-HAS_CURL="$(type "curl" &> /dev/null && echo true || echo false)"
-HAS_SED="$(type "sed" &> /dev/null && echo true || echo false)"
-
 # Verify OS compatibility.
 initOS() {
   OS=$(echo `uname`|tr '[:upper:]' '[:lower:]')
 
   if [ "${OS}" != "linux" ]; then
-    echo "This script is only supported on Linux."
-    exit 1
+    print_error "This script is only supported on Linux."
   fi
 
   if [ -f /etc/os-release ]; then
     . /etc/os-release
     if [[ "$ID" != "fedora" ]]; then
-      echo "[WARNING] This script is optimized specifically for Fedora. You are running $ID."
+      print_warning "This script is optimized specifically for Fedora. You are running $ID."
     fi
   fi
 }
@@ -43,14 +37,28 @@ execute() {
   local done_msg="$2"
   shift 2
 
-  "$@" >/dev/null 2>&1 &
+  if [ "${DEBUG}" == "true" ]; then
+    "$@"
+    local exit_code=$?
+    if [ $exit_code -eq 0 ]; then
+      print_success "$done_msg"
+    else
+      print_failure "$active_msg"
+    fi
+    return $exit_code
+  fi
+
+  local tmp_out
+  tmp_out=$(mktemp)
+
+  "$@" >"$tmp_out" 2>&1 &
   local pid=$!
   local delay=0.08
   local spinner=( '⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏' )
   local i=0
 
   while kill -0 $pid 2>/dev/null; do
-    printf "\r\033[36m%s\033[0m %s\033[K" "${spinner[i]}" "$active_msg"
+    print_spinner "${spinner[i]}" "$active_msg"
     i=$(( (i + 1) % 10 ))
     sleep $delay
   done
@@ -59,11 +67,28 @@ execute() {
   local exit_code=$?
 
   if [ $exit_code -eq 0 ]; then
-    printf "\r\033[32m✔\033[0m %s\033[K\n" "$done_msg"
+    print_success "$done_msg"
   else
-    printf "\r\033[31m✖\033[0m %s (failed)\033[K\n" "$active_msg"
+    print_failure "$active_msg"
+    cat "$tmp_out"
   fi
+  rm -f "$tmp_out"
   return $exit_code
+}
+
+# Print spinner frame.
+print_spinner() {
+  printf "\r\033[36m%s\033[0m %s\033[K" "$1" "$2"
+}
+
+# Print success message.
+print_success() {
+  printf "\r\033[32m✔\033[0m %s\033[K\n" "$1"
+}
+
+# Print failure message.
+print_failure() {
+  printf "\r\033[31m✖\033[0m %s (failed)\033[K\n" "$1"
 }
 
 # Print section header.
@@ -76,22 +101,32 @@ print_warning() {
   echo -e "\033[1;33m[!] ${1}\033[0m"
 }
 
+# Print error message.
+log_error() {
+  echo -e "\033[1;31m[ERROR] ${1}\033[0m"
+}
+
+# Print error message and exit.
+print_error() {
+  log_error "$1"
+  exit 1
+}
+
+# Check if a tool exists.
+check_tool() {
+  if ! command -v "$1" &> /dev/null; then
+    print_error "Could not find $1. $2"
+  fi
+}
+
 # Verify dependencies.
 verifySupported() {
-  if [ "${HAS_DNF}" != "true" ]; then
-    echo "[ERROR] Could not find dnf. This script requires Fedora's DNF package manager."
-    exit 1
-  fi
-
-  if [ "${HAS_CURL}" != "true" ]; then
-    echo "[ERROR] Could not find curl. Please install curl before continuing."
-    exit 1
-  fi
-
-  if [ "${HAS_SED}" != "true" ]; then
-    echo "[ERROR] Could not find sed. It is required for GRUB configuration."
-    exit 1
-  fi
+  check_tool "dnf" "This script requires Fedora's DNF package manager."
+  check_tool "curl" "Please install curl before continuing."
+  check_tool "sed" "It is required for GRUB configuration."
+  check_tool "tar" "Please install tar before continuing."
+  check_tool "xz" "Please install xz before continuing."
+  check_tool "fc-cache" "Please install fontconfig before continuing."
 }
 
 # Remove default bloatware.
@@ -107,14 +142,14 @@ installSystemPackages() {
   print_section "Installing System Packages..."
   execute "Updating DNF packages..." "Updated DNF packages." runAsRoot dnf update -y
 
-  # Install official GitHub CLI via DNF5 explicitly
+  # Install official GitHub CLI
   execute "Installing DNF5 plugins..." "Installed DNF5 plugins." runAsRoot dnf install -y dnf5-plugins
   execute "Adding GitHub CLI repo..." "Added GitHub CLI repo." runAsRoot dnf config-manager addrepo --from-repofile=https://cli.github.com/packages/rpm/gh-cli.repo
   execute "Installing GitHub CLI..." "Installed GitHub CLI." runAsRoot dnf install -y gh --repo gh-cli
 
-  # Install other CLI tools and fonts
+  # Install CLI utilities
   execute "Enabling Starship COPR..." "Enabled Starship COPR." runAsRoot dnf copr enable -y atim/starship
-  execute "Installing just, starship..." "Installed just, starship." runAsRoot dnf install -y just starship
+  execute "Installing CLI tools and utilities..." "Installed CLI tools and utilities." runAsRoot dnf install -y just starship
 
   local FONT_DIR="$HOME/.local/share/fonts/FiraCode"
   mkdir -p "$FONT_DIR"
@@ -144,18 +179,31 @@ installHardwareDrivers() {
 installApps() {
   print_section "Installing GUI Applications..."
 
-  if [ "${HAS_FLATPAK}" != "true" ]; then
+  if ! command -v flatpak &> /dev/null; then
     execute "Installing flatpak..." "Installed flatpak." runAsRoot dnf install -y flatpak
   fi
 
   # Ensure the flathub remote is configured
   execute "Adding flathub remote..." "Added flathub remote." runAsRoot flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-  execute "Installing Firefox via flatpak..." "Installed Firefox via flatpak." runAsRoot flatpak install -y flathub org.mozilla.firefox
-  execute "Installing Obsidian via flatpak..." "Installed Obsidian via flatpak." runAsRoot flatpak install -y flathub md.obsidian.Obsidian
+  for app in org.mozilla.firefox md.obsidian.Obsidian; do
+    execute "Installing ${app} via flatpak..." "Installed ${app} via flatpak." runAsRoot flatpak install -y flathub "${app}"
+  done
   execute "Updating flatpak packages..." "Updated flatpak packages." runAsRoot flatpak update -y
 
   execute "Installing Zed editor..." "Installed Zed editor." sh -c "curl -s -f https://zed.dev/install.sh | sh"
+}
+
+# Copy configuration file.
+copy_dotfile() {
+  local src="$1"
+  local dest="$2"
+  if [[ -f "$src" ]]; then
+    mkdir -p "$(dirname "$dest")"
+    cp "$src" "$dest"
+  else
+    print_warning "$(basename "$src") not found in $(dirname "$src")"
+  fi
 }
 
 # Configure dotfiles.
@@ -166,19 +214,8 @@ configureDotfiles() {
     printf "\neval \"\$(starship init bash)\"\n" >> "$HOME/.bashrc"
   fi
 
-  if [[ -f "${DOTFILES_DIR}/config/starship.toml" ]]; then
-    mkdir -p "$HOME/.config"
-    cp "${DOTFILES_DIR}/config/starship.toml" "$HOME/.config/starship.toml"
-  else
-    echo "[WARNING] starship.toml not found in ${DOTFILES_DIR}/config"
-  fi
-
-  if [[ -f "${DOTFILES_DIR}/config/zed/settings.json" ]]; then
-    mkdir -p "$HOME/.config/zed"
-    cp "${DOTFILES_DIR}/config/zed/settings.json" "$HOME/.config/zed/settings.json"
-  else
-    echo "[WARNING] settings.json not found in ${DOTFILES_DIR}/config/zed"
-  fi
+  copy_dotfile "${DOTFILES_DIR}/config/starship.toml" "$HOME/.config/starship.toml"
+  copy_dotfile "${DOTFILES_DIR}/config/zed/settings.json" "$HOME/.config/zed/settings.json"
 }
 
 # Cleanup on exit.
@@ -191,26 +228,25 @@ cleanup() {
 fail_trap() {
   result=$?
   if [ "$result" != "0" ]; then
-    if [[ -n "${INPUT_ARGUMENTS:-}" ]]; then
-      echo "Failed to run setup with the arguments provided: $INPUT_ARGUMENTS"
-      help
-    else
-      echo "Failed to run system setup."
-    fi
+    log_error "Setup failed or was aborted."
   fi
   cleanup
   exit $result
 }
 
+# Print help option.
+print_help_opt() {
+  echo -e "  \033[1;32m${1}\033[0m ${2}"
+}
+
 # Show help.
 help () {
-  echo -e "\033[1;34mSetup Script Usage\033[0m"
-  echo
+  echo -e "\033[1;34mSetup Script Usage\033[0m\n"
   echo "Options:"
-  echo -e "  \033[1;32m-h, --help\033[0m                 Show this help message and exit"
-  echo -e "  \033[1;32m-d, --dotfiles-dir <dir>\033[0m   Path to dotfiles directory (default: .)"
-  echo -e "  \033[1;32m    --no-sudo\033[0m              Run without sudo privileges"
-  echo -e "  \033[1;32m    --debug\033[0m                Run with debug output enabled"
+  print_help_opt "-h, --help                " "Show this help message and exit"
+  print_help_opt "-d, --dotfiles-dir <dir>  " "Path to dotfiles directory (default: .)"
+  print_help_opt "    --no-sudo             " "Run without sudo privileges"
+  print_help_opt "    --debug               " "Run with debug output enabled"
 }
 
 # Finalize setup.
@@ -229,17 +265,12 @@ finalize() {
 
 # Execution
 
-# Stop on error.
-trap "fail_trap" EXIT
-set -e
-
 # Set debug.
 if [ "${DEBUG}" == "true" ]; then
   set -x
 fi
 
 # Parse arguments.
-export INPUT_ARGUMENTS="${@}"
 set -u
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -248,7 +279,8 @@ while [[ $# -gt 0 ]]; do
        if [[ $# -ne 0 ]]; then
            export DOTFILES_DIR="${1}"
        else
-           echo -e "Please provide the dotfiles directory path."
+           log_error "Please provide the dotfiles directory path."
+           help
            exit 1
        fi
        ;;
@@ -263,12 +295,18 @@ while [[ $# -gt 0 ]]; do
        help
        exit 0
        ;;
-    *) exit 1
+    *) log_error "Unknown arguments: $1"
+       help
+       exit 1
        ;;
   esac
   shift
 done
 set +u
+
+# Stop on error.
+trap "fail_trap" EXIT
+set -e
 
 initOS
 verifySupported
