@@ -84,7 +84,7 @@ installSystemPackages() {
   local FONT_DIR="$HOME/.local/share/fonts/FiraCode"
   mkdir -p "$FONT_DIR"
   curl -s -L "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz" | tar -xJ -C "$FONT_DIR"
-  fc-cache -fv
+  fc-cache -r
 
   echo "System packages installed."
 }
