@@ -58,7 +58,7 @@ verifySupported() {
 }
 
 # removeDefaultBloat remove all unnecessary packages,
-# it also removes packages for better alternatives
+# it also removes packages with better alternatives
 removeDefaultBloat() {
   echo "Cleaning system of default bloat.."
   runAsRoot dnf remove -y \
@@ -66,8 +66,8 @@ removeDefaultBloat() {
     gnome-maps gnome-calendar gnome-boxes libreoffice* firefox
 }
 
-# installFedoraPackages installs all core system dependencies via DNF.
-installFedoraPackages() {
+# installSystemPackages installs all core system dependencies.
+installSystemPackages() {
   echo "Installing system packages via DNF..."
   runAsRoot dnf update -y
 
@@ -89,9 +89,9 @@ installFedoraPackages() {
   echo "System packages installed."
 }
 
-# configureNvidiaWayland installs the NVIDIA drivers
-# and nvidia-container-toolkit.
-configureNvidiaWayland() {
+# installHardwareDrivers installs the required hardware drivers
+# and container toolkits.
+installHardwareDrivers() {
   echo "Installing NVIDIA Drivers and Container Toolkit..."
 
   local fedora_version
@@ -130,9 +130,9 @@ installApps() {
   echo "Applications installed."
 }
 
-# configureStarshipAndZed links/copies dotfile configurations into the home directory.
-configureStarshipAndZed() {
-  echo "Configuring Starship and Zed settings..."
+# configureDotfiles links/copies dotfile configurations into the home directory.
+configureDotfiles() {
+  echo "Configuring user settings and dotfiles..."
 
   if ! grep -q 'starship init bash' "$HOME/.bashrc"; then
     printf "\neval \"\$(starship init bash)\"\n" >> "$HOME/.bashrc"
@@ -242,8 +242,8 @@ set +u
 initOS
 verifySupported
 removeDefaultBloat
-installFedoraPackages
-configureNvidiaWayland
+installSystemPackages
+installHardwareDrivers
 installApps
-configureStarshipAndZed
+configureDotfiles
 finalize
