@@ -134,7 +134,9 @@ installApps() {
 configureStarshipAndZed() {
   echo "Configuring Starship and Zed settings..."
 
-  printf "eval \"\$(starship init bash)\"" > "$HOME/.bashrc"
+  if ! grep -q 'starship init bash' "$HOME/.bashrc"; then
+    printf "\neval \"\$(starship init bash)\"\n" >> "$HOME/.bashrc"
+  fi
 
   if [[ -f "${DOTFILES_DIR}/starship.toml" ]]; then
     mkdir -p "$HOME/.config"
