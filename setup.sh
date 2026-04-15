@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Inspired by Helm/Glide installers.
+# Inspired by get-helm-4 installer.
 
 : ${USE_SUDO:="true"}
 : ${DEBUG:="false"}
