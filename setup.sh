@@ -87,7 +87,7 @@ installFedoraPackages() {
 
 # configureNvidiaWayland installs the NVIDIA drivers
 # and nvidia-container-toolkit.
-installNVIDIA() {
+configureNvidiaWayland() {
   echo "Installing NVIDIA Drivers and Container Toolkit..."
 
   local fedora_version
@@ -149,6 +149,12 @@ configureStarshipAndZed() {
   echo "Starship and Zed configured."
 }
 
+# cleanup cleans up any temporary files or state that should be removed on exit.
+cleanup() {
+  # Add temporary directory cleanup here if any are created in the future
+  :
+}
+
 # fail_trap is executed if an error occurs.
 fail_trap() {
   result=$?
@@ -175,13 +181,13 @@ help () {
 
 # perform any final actions
 finalize() {
-  # Add temporary directory cleanup here if any are created in the future
+  cleanup
 
   runAsRoot /usr/sbin/kmodgenca
   runAsRoot mokutil --import /etc/pki/akmods/certs/public_key.der
 
   echo "A reboot is required to enroll NVIDIA modules signing key for Secure Boot."
-  echo "After reboot, run `mokutil --test-key /etc/pki/akmods/certs/public_key.der` to check if the key is enrolled."
+  echo "After reboot, run \`mokutil --test-key /etc/pki/akmods/certs/public_key.der\` to check if the key is enrolled."
 }
 
 # Execution
@@ -229,6 +235,7 @@ set +u
 
 initOS
 verifySupported
+removeDefaultBloat
 installFedoraPackages
 configureNvidiaWayland
 installApps
