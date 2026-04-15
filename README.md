@@ -1,21 +1,19 @@
 # Dotfiles
 
-A simple, automated setup for my Fedora development environment. It is optimized for Wayland, NVIDIA GPUs, plus Podman containers.
+A simple, automated setup script for my Fedora development environment.
 
 ## Features
 
-The `setup.sh` script configures a fresh Fedora install with:
-
-- **CLI Tools**: `gh`, `just`, `starship`
-- **Fonts**: Fira Code
-- **NVIDIA**: Proprietary drivers configured for Wayland
-- **Podman**: GPU-accelerated containers
-- **Desktop Apps**: Zed, Obsidian (Flatpak)
-- **Dotfiles**: Custom configs for Starship, Zed
+- **System Cleanup**: Removes default bloatware and unnecessary pre-installed packages.
+- **CLI Utilities**: Installs `gh` and `just`.
+- **Prompt**: Installs the `starship` prompt.
+- **Typography**: Installs and caches FiraCode Nerd Font.
+- **NVIDIA GPU**: Configures RPM Fusion, proprietary NVIDIA drivers, and the NVIDIA Container Toolkit.
+- **Applications**: Installs Firefox, Obsidian, and the Zed editor.
 
 ## Usage
 
-Clone this repository, then run the setup script:
+Clone the repository and execute the setup script:
 
 ```bash
 git clone https://github.com/elijahcuellar/dotfiles.git ~/dotfiles
@@ -25,15 +23,25 @@ cd ~/dotfiles
 
 ### Options
 
-The script supports a few flags:
+| Option | Description |
+| :--- | :--- |
+| `-d, --dotfiles-dir <dir>` | Specify a custom path to the dotfiles directory (default: `.`) |
+| `--no-sudo` | Execute commands without `sudo` privileges |
+| `--debug` | Enable verbose execution output |
+| `-h, --help` | Display the help menu |
 
-- `-d, --dotfiles-dir <dir>`: Set a custom path to the dotfiles folder.
-- `--no-sudo`: Run without `sudo` privileges.
-- `--debug`: Show verbose debug output.
-- `-h, --help`: Show the help menu.
+## Post-Install
+
+Systems with **Secure Boot** enabled require a reboot to enroll the generated AKMODS key.
+
+After rebooting, verify the key enrollment:
+
+```bash
+mokutil --test-key /etc/pki/akmods/certs/public_key.der
+```
 
 ## Structure
 
-- `setup.sh`: The main installation script.
-- `starship.toml`: Settings for the Starship prompt.
-- `settings.json`: Settings for the Zed editor.
+- `setup.sh`: The primary provisioning script.
+- `starship.toml`: Starship prompt configuration.
+- `settings.json`: Zed editor configuration.
