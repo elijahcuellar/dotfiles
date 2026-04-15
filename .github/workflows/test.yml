@@ -35,7 +35,7 @@ jobs:
           set -euo pipefail
 
           # Install prerequisite utilities missing from minimal Fedora container images
-          dnf install -y --setopt=install_weak_deps=False --setopt=fastestmirror=True curl git dnf-plugins-core util-linux tar xz
+          dnf install -y --setopt=install_weak_deps=False --setopt=fastestmirror=True curl git dnf-plugins-core util-linux tar xz fontconfig
 
       - name: Execute Provisioning Script
         # Running with --debug ensures verbose logs in GitHub Actions for easier troubleshooting
