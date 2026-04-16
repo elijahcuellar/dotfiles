@@ -134,15 +134,9 @@ installHardwareDrivers() {
   execute_root "Importing NVIDIA repo GPG keys..." "Imported NVIDIA repo GPG keys." bash -c '
     set -euo pipefail
     repo=/etc/yum.repos.d/nvidia-container-toolkit.repo
-    mapfile -t keys < <(awk -F= "tolower(\$1)==\"gpgkey\"{print \$2}" "$repo" | tr " " "\n" | sed "/^$/d" | sort -u)
-    if [ "${#keys[@]}" -eq 0 ]; then
-      echo "No gpgkey entries found in $repo" >&2
-      exit 1
-    fi
-    for key in "${keys[@]}"; do
-      echo "Importing NVIDIA GPG key: $key"
-      rpm --import "$key"
-    done
+    awk -F= "tolower(\$1)==\"gpgkey\"{print \$2}" "$repo" \
+      | tr " " "\n" | sed "/^$/d" | sort -u \
+      | xargs -r -n1 rpm --import
     if [ "${DEBUG:-false}" == "true" ]; then
       echo "Imported GPG keys:"
       rpm -qa "gpg-pubkey*"
