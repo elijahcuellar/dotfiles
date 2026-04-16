@@ -71,10 +71,14 @@ check_tool() {
 # --- Core Phases ---
 
 initOS() {
-  [ "$(uname | tr '[:upper:]' '[:lower:]')" != "linux" ] && print_error "This script is only supported on Linux."
+  if [ "$(uname | tr '[:upper:]' '[:lower:]')" != "linux" ]; then
+    print_error "This script is only supported on Linux."
+  fi
   if [ -f /etc/os-release ]; then
     . /etc/os-release
-    [ "$ID" != "fedora" ] && print_warning "This script is optimized specifically for Fedora. You are running $ID."
+    if [ "$ID" != "fedora" ]; then
+      print_warning "This script is optimized specifically for Fedora. You are running $ID."
+    fi
   fi
 }
 
@@ -131,12 +135,18 @@ installHardwareDrivers() {
     set -euo pipefail
     repo=/etc/yum.repos.d/nvidia-container-toolkit.repo
     mapfile -t keys < <(awk -F= "tolower(\$1)==\"gpgkey\"{print \$2}" "$repo" | tr " " "\n" | sed "/^$/d" | sort -u)
-    [ "${#keys[@]}" -eq 0 ] && { echo "No gpgkey entries found in $repo" >&2; exit 1; }
+    if [ "${#keys[@]}" -eq 0 ]; then
+      echo "No gpgkey entries found in $repo" >&2
+      exit 1
+    fi
     for key in "${keys[@]}"; do
       echo "Importing NVIDIA GPG key: $key"
       rpm --import "$key"
     done
-    [ "${DEBUG:-false}" == "true" ] && { echo "Imported GPG keys:"; rpm -qa "gpg-pubkey*"; }
+    if [ "${DEBUG:-false}" == "true" ]; then
+      echo "Imported GPG keys:"
+      rpm -qa "gpg-pubkey*"
+    fi
     exit 0
   '
 
@@ -146,7 +156,9 @@ installHardwareDrivers() {
 
 installApps() {
   print_section "Installing GUI Applications..."
-  command -v flatpak &> /dev/null || dnf_install flatpak
+  if ! command -v flatpak &> /dev/null; then
+    dnf_install flatpak
+  fi
   execute_root "Adding flathub remote..." "Added flathub remote." flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
   for app in org.mozilla.firefox md.obsidian.Obsidian; do
@@ -168,7 +180,9 @@ copy_dotfile() {
 
 configureDotfiles() {
   print_section "Configuring user settings and dotfiles..."
-  grep -q 'starship init bash' "$HOME/.bashrc" || printf "\neval \"\$(starship init bash)\"\n" >> "$HOME/.bashrc"
+  if ! grep -q 'starship init bash' "$HOME/.bashrc"; then
+    printf "\neval \"\$(starship init bash)\"\n" >> "$HOME/.bashrc"
+  fi
   copy_dotfile "${DOTFILES_DIR}/config/starship.toml" "$HOME/.config/starship.toml"
   copy_dotfile "${DOTFILES_DIR}/config/zed/settings.json" "$HOME/.config/zed/settings.json"
 }
@@ -185,7 +199,9 @@ postInstall() {
 
 fail_trap() {
   local res=$?
-  [ "$res" != "0" ] && log_error "Setup failed or was aborted."
+  if [ "$res" != "0" ]; then
+    log_error "Setup failed or was aborted."
+  fi
   exit "$res"
 }
 
@@ -219,7 +235,9 @@ while [[ $# -gt 0 ]]; do
 done
 set +u
 
-[ "${DEBUG}" == "true" ] && set -x
+if [ "${DEBUG}" == "true" ]; then
+  set -x
+fi
 trap "fail_trap" EXIT
 set -e
 
