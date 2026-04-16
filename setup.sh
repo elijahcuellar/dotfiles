@@ -170,9 +170,33 @@ installHardwareDrivers() {
 
   execute "Installing NVIDIA drivers (akmod, cuda)..." "Installed NVIDIA drivers (akmod, cuda)." runAsRoot dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda
 
-  execute "Adding NVIDIA container toolkit repo..." "Added NVIDIA container toolkit repo." runAsRoot sh -c "curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo -o /etc/yum.repos.d/nvidia-container-toolkit.repo"
+  # --- NVIDIA container toolkit repo + secure key import ---
+  execute "Adding NVIDIA container toolkit repo..." "Added NVIDIA container toolkit repo." \
+    runAsRoot sh -c "curl -fsSL https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo \
+      -o /etc/yum.repos.d/nvidia-container-toolkit.repo"
 
-  execute "Installing NVIDIA container toolkit..." "Installed NVIDIA container toolkit." runAsRoot dnf install -y nvidia-container-toolkit
+  # Import any gpgkey URLs declared by the repo file BEFORE dnf uses the repo (repo_gpgcheck requires this)
+  execute "Importing NVIDIA repo GPG keys..." "Imported NVIDIA repo GPG keys." \
+    runAsRoot sh -c '
+      set -euo pipefail
+      repo=/etc/yum.repos.d/nvidia-container-toolkit.repo
+      # Extract gpgkey= lines, split on whitespace (repo may list multiple keys), import each
+      keys=$(awk -F= '\''tolower($1)=="gpgkey"{print $2}'\'' "$repo" | tr " " "\n" | sed "/^$/d")
+      if [ -z "$keys" ]; then
+        echo "No gpgkey entries found in $repo" >&2
+        exit 1
+      fi
+      while IFS= read -r key; do
+        curl -fsSL "$key" | rpm --import -
+      done <<< "$keys"
+    '
+
+  # Force metadata refresh now that keys are installed (this is where repomd.xml is verified)
+  execute "Refreshing DNF cache (NVIDIA repo)..." "Refreshed DNF cache (NVIDIA repo)." \
+    runAsRoot dnf makecache -y --disablerepo="*" --enablerepo="nvidia-container-toolkit*"
+
+  execute "Installing NVIDIA container toolkit..." "Installed NVIDIA container toolkit." \
+    runAsRoot dnf install -y nvidia-container-toolkit
 }
 
 # Install GUI apps.
