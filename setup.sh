@@ -168,7 +168,7 @@ installHardwareDrivers() {
     "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm" \
     "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
 
-  execute "Installing NVIDIA drivers (akmod, cuda)..." "Installed NVIDIA drivers (akmod, cuda)." runAsRoot dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda
+  execute "Installing NVIDIA drivers..." "Installed NVIDIA drivers." runAsRoot dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda
 
   # --- NVIDIA container toolkit repo + secure key import ---
   execute "Adding NVIDIA container toolkit repo..." "Added NVIDIA container toolkit repo." \
@@ -242,19 +242,12 @@ configureDotfiles() {
   copy_dotfile "${DOTFILES_DIR}/config/zed/settings.json" "$HOME/.config/zed/settings.json"
 }
 
-# Cleanup on exit.
-cleanup() {
-  # Add temporary directory cleanup here if any are created in the future
-  :
-}
-
 # Handle errors.
 fail_trap() {
   result=$?
   if [ "$result" != "0" ]; then
     log_error "Setup failed or was aborted."
   fi
-  cleanup
   exit $result
 }
 
@@ -274,9 +267,7 @@ help () {
 }
 
 # Finalize setup.
-finalize() {
-  cleanup
-
+postInstall() {
   print_section "Finalizing Setup..."
   execute "Generating AKMODS key..." "Generated AKMODS key." runAsRoot /usr/sbin/kmodgenca
   execute "Importing MOK key..." "Imported MOK key." runAsRoot mokutil --import /etc/pki/akmods/certs/public_key.der
@@ -288,11 +279,6 @@ finalize() {
 }
 
 # Execution
-
-# Set debug.
-if [ "${DEBUG}" == "true" ]; then
-  set -x
-fi
 
 # Parse arguments.
 set -u
@@ -313,7 +299,6 @@ while [[ $# -gt 0 ]]; do
        ;;
     '--debug')
        export DEBUG="true"
-       set -x
        ;;
     '--help'|-h)
        help
@@ -328,6 +313,11 @@ while [[ $# -gt 0 ]]; do
 done
 set +u
 
+# Set debug.
+if [ "${DEBUG}" == "true" ]; then
+  set -x
+fi
+
 # Stop on error.
 trap "fail_trap" EXIT
 set -e
@@ -339,4 +329,4 @@ installSystemPackages
 installHardwareDrivers
 installApps
 configureDotfiles
-finalize
+postInstall
