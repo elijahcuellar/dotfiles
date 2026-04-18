@@ -1,5 +1,7 @@
-░█░█░█▀▀░█░░░█▀▀░█▀█░█▄█░█▀▀░░░▀█▀░█▀█░░░█▀▀░█▀▀░█▀▄░█▀█░█▀▄░█▀█
-░█▄█░█▀▀░█░░░█░░░█░█░█░█░█▀▀░░░░█░░█░█░░░█▀▀░█▀▀░█░█░█░█░█▀▄░█▀█
-░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀░▀░▀▀▀░░░░▀░░▀▀▀░░░▀░░░▀▀▀░▀▀░░▀▀▀░▀░▀░▀░▀
+╔──────────────────────────────────────────────────────────╗
+│░█▀▀░█▀▀░█▀▄░█▀█░█▀▄░█▀█░░░░░░░█▀▄░█▀▀░█▀▀░▀█▀░█▀█░█▀▀░█▀▄│
+│░█▀▀░█▀▀░█░█░█░█░█▀▄░█▀█░░░░░░░█▀▄░█▀▀░█▀▀░░█░░█░█░█▀▀░█░█│
+│░▀░░░▀▀▀░▀▀░░▀▀▀░▀░▀░▀░▀░▄▀░░░░▀░▀░▀▀▀░▀░░░▀▀▀░▀░▀░▀▀▀░▀▀░│
+╚──────────────────────────────────────────────────────────╝
 
-Here, you'll find all the configurations and customizations that I use to personalize my Fedora development environment. From terminal settings to editor configurations, this repository is a collection of my favorite tools and tweaks that enhance my workflow. Feel free to explore, fork, and contribute if you find something useful or have suggestions for improvements. Happy coding!
+Welcome to my dotfiles! Here, you will find the configurations and automated script I use to personalize my Fedora development environment. From automated software installation to editor configurations, this repository contains a curated collection of my favorite tools and customizations designed to enhance productivity and streamline my workflow. Feel free to explore, fork, and contribute if you find something useful or have suggestions for improvements. Happy coding!
