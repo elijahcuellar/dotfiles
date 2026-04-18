@@ -1,21 +1,29 @@
-#!/usr/bin/env bash
+```#!/usr/bin/env bash
+# ==============================================================================
+# Fedora Setup Script
+# Configures a fresh Fedora installation with essential tools, drivers, and apps.
+# ==============================================================================
+
 set -eo pipefail
 
+# Default environment configuration
 : "${USE_SUDO:=true}" "${DEBUG:=false}" "${DOTFILES_DIR:=.}"
 
+# Terminal color codes for output formatting
 declare -Ar COLORS=(
   [black]=30 [red]=31 [green]=32 [yellow]=33
   [blue]=34 [magenta]=35 [cyan]=36 [white]=37
 )
+
+# Spinner frames for long-running tasks
 readonly SPINNERS=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 
-print_success() {
-  printf "\r\033[%sm✓\033[0m %s\033[K\n" "${COLORS[green]}" "$1"
-}
-print_error() {
-  printf "\r\033[%sm[ERROR] %s\033[0m\033[K\n" "${COLORS[red]}" "$1"
-  exit 1
-}
+# ------------------------------------------------------------------------------
+# Utility Functions
+# ------------------------------------------------------------------------------
+
+print_success() { printf "\r\033[%sm✓\033[0m %s\033[K\n" "${COLORS[green]}" "$1"; }
+print_error() { printf "\r\033[%sm[ERROR] %s\033[0m\033[K\n" "${COLORS[red]}" "$1"; exit 1; }
 print_warning() { printf "\n\r\033[%sm[!] %s\033[0m\033[K\n" "${COLORS[yellow]}" "$1"; }
 print_section() { printf "\n\033[1;34m==> %s\033[0m\n" "${1}"; }
 
@@ -27,8 +35,12 @@ run_as_root() {
   fi
 }
 
+# Executes a command with a loading spinner, capturing output on failure
 execute() {
-  local msg="$1" tmp pid i=0; shift
+  local msg="$1" tmp pid i=0
+  shift
+
+  # In debug mode, run command directly and display output
   if [[ "${DEBUG}" == "true" ]]; then
     if "$@"; then
       print_success "$msg"
@@ -38,14 +50,19 @@ execute() {
     return
   fi
 
+  # Create a temporary file to store standard and error outputs
   tmp=$(mktemp)
-  "$@" >"$tmp" 2>&1 & pid=$!
+  "$@" >"$tmp" 2>&1 &
+  pid=$!
 
+  # Loop the spinner animation while the background process is running
   while kill -0 $pid 2>/dev/null; do
     printf "\r\033[36m%s\033[0m %s...\033[K" "${SPINNERS[i]}" "$msg"
-    i=$(( (i + 1) % ${#SPINNERS[@]} )); sleep 0.08
+    i=$(( (i + 1) % ${#SPINNERS[@]} ))
+    sleep 0.08
   done
 
+  # Process completed, check the exit status
   if wait $pid; then
     print_success "$msg"
   else
@@ -59,6 +76,7 @@ execute() {
 
 execute_root() { execute "$1" run_as_root "${@:2}"; }
 
+# Wrapper for installing packages across multiple managers
 install_packages() {
   local mgr="$1" msg="$2"; shift 2
   case "$mgr" in
@@ -72,131 +90,179 @@ add_dnf_repo() {
   local name="$1" type="$2" url="$3"
   case "$type" in
     repofile)
-      local dest
-      dest="/etc/yum.repos.d/$(basename "$url")"
-      execute_root "Add $name" curl -sLo "$dest" "$url"
+      local dest="/etc/yum.repos.d/$(basename "$url")"
+      execute_root "Add $name repository" curl -sLo "$dest" "$url"
       ;;
-    copr) execute_root "Enable $name COPR" dnf copr enable -y "$url" ;;
+    copr) execute_root "Enable $name COPR repository" dnf copr enable -y "$url" ;;
     *) print_error "Unsupported DNF repo type '$type'. Supported: 'repofile', 'copr'." ;;
   esac
 }
 
 check_tool() {
-  command -v "$1" &>/dev/null || print_error "Missing dep: '$1'. $2"
+  command -v "$1" &>/dev/null || print_error "Missing dependency: '$1'. $2"
 }
 
 copy_file() {
-  local src="$1" dest="$2" desc="${3:-$(basename "$1")}"
+  local src="$1"
+  local dest="$2"
+  local desc="${3:-$(basename "$1")}"
+
   if [[ -f "$src" ]]; then
-    mkdir -p "$(dirname "$dest")"; cp "$src" "$dest"
+    mkdir -p "$(dirname "$dest")"
+    cp "$src" "$dest"
     print_success "Configured $desc"
   else
     print_warning "$desc not found at $src"
   fi
 }
 
-append_if_missing() { grep -q "$2" "$1" 2>/dev/null || printf "%s\n" "$3" >> "$1"; }
+append_if_missing() {
+  local file="$1"
+  local search_string="$2"
+  local line_to_append="$3"
+
+  if ! grep -q "$search_string" "$file" 2>/dev/null; then
+    printf "%s\n" "$line_to_append" >> "$file"
+  fi
+}
 
 download_extract() {
-  local url="$1" dest="$2" msg="$3"
+  local url="$1"
+  local dest="$2"
+  local msg="$3"
+
   mkdir -p "$dest"
   execute "$msg" bash -c "curl -s -L '$url' | tar -xJ -C '$dest'"
 }
 
+# ------------------------------------------------------------------------------
+# Dependency & Configuration Maps
+# ------------------------------------------------------------------------------
+
 declare -A DEPS=(
   [dnf]="Required for packages." [curl]="Required for downloads."
   [tar]="Required for extraction." [xz]="Required for decompression."
-  [fc-cache]="Required for fonts."
+  [fc-cache]="Required for updating fonts."
 )
 
 declare -A CFGS=(
-  ["${DOTFILES_DIR}/config/starship.toml"]="$HOME/.config/starship.toml|Starship"
-  ["${DOTFILES_DIR}/config/zed/settings.json"]="$HOME/.config/zed/settings.json|Zed"
+  ["${DOTFILES_DIR}/config/starship.toml"]="$HOME/.config/starship.toml|Starship prompt"
+  ["${DOTFILES_DIR}/config/zed/settings.json"]="$HOME/.config/zed/settings.json|Zed editor settings"
 )
 
+# ------------------------------------------------------------------------------
+# Core Setup Steps
+# ------------------------------------------------------------------------------
+
 init_os() {
-  local os; os=$(uname | tr '[:upper:]' '[:lower:]')
-  [[ "$os" != "linux" ]] && print_error "Script supported on Linux only. Detected OS: $os."
+  local os
+  os=$(uname | tr '[:upper:]' '[:lower:]')
+
+  if [[ "$os" != "linux" ]]; then
+    print_error "Script supported on Linux only. Detected OS: $os."
+  fi
+
   if [[ -f /etc/os-release ]]; then
     # shellcheck source=/dev/null
     source /etc/os-release
     if [[ "${ID:-}" != "fedora" ]]; then
-      print_warning "Optimized for Fedora."
+      print_warning "This script is highly optimized for Fedora Linux."
     fi
   fi
 }
 
 remove_default_bloat() {
-  print_section "Cleaning bloat..."
+  print_section "Cleaning Default Bloatware..."
+
   local pkgs=(gnome-tour gnome-connections gnome-contacts gnome-weather
               gnome-maps gnome-calendar gnome-boxes libreoffice\* firefox)
-  execute_root "Remove bloat" dnf remove -y "${pkgs[@]}"
+
+  execute_root "Remove pre-installed applications" dnf remove -y "${pkgs[@]}"
 }
 
 install_system_packages() {
   print_section "Installing System Packages..."
 
   local dnf_cfg="/etc/dnf/dnf.conf"
-  execute_root "Optimize DNF config" bash -c "
+  execute_root "Optimize DNF configuration" bash -c "
     grep -q '^fastestmirror=True' $dnf_cfg || printf 'fastestmirror=True\n' >> $dnf_cfg
     grep -q '^max_parallel_downloads=' $dnf_cfg || printf 'max_parallel_downloads=10\n' >> $dnf_cfg
   "
 
   execute_root "Update DNF packages" dnf update -y -q
+
   add_dnf_repo "GitHub CLI" "repofile" "https://cli.github.com/packages/rpm/gh-cli.repo"
   add_dnf_repo "Starship" "copr" "atim/starship"
 
-  install_packages dnf "Install core tools" dnf5-plugins git just starship micro
+  install_packages dnf "Install core tools (git, just, starship, micro)" \
+    dnf5-plugins git just starship micro
   install_packages dnf "Install GitHub CLI" gh --repo gh-cli
 
-  local url="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz"
-  download_extract "$url" "$HOME/.local/share/fonts/FiraCode" "Install FiraCode"
+  local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz"
+  local font_dest="$HOME/.local/share/fonts/FiraCode"
+
+  download_extract "$font_url" "$font_dest" "Install FiraCode Nerd Font"
   execute "Update font cache" fc-cache -r
 }
 
 install_hardware_drivers() {
   print_section "Installing Hardware Drivers..."
-  local fv; fv=$(rpm -E %fedora)
-  local base="https://mirrors.rpmfusion.org"
-  install_packages dnf "Install RPMFusion" \
-    "${base}/free/fedora/rpmfusion-free-release-${fv}.noarch.rpm" \
-    "${base}/nonfree/fedora/rpmfusion-nonfree-release-${fv}.noarch.rpm"
 
-  install_packages dnf "Install NVIDIA drivers" akmod-nvidia xorg-x11-drv-nvidia-cuda
+  local fv
+  fv=$(rpm -E %fedora)
+  local rpmfusion_base="https://mirrors.rpmfusion.org"
 
-  local repo="https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo"
-  add_dnf_repo "NVIDIA toolkit" "repofile" "$repo"
+  install_packages dnf "Install RPMFusion Repositories" \
+    "${rpmfusion_base}/free/fedora/rpmfusion-free-release-${fv}.noarch.rpm" \
+    "${rpmfusion_base}/nonfree/fedora/rpmfusion-nonfree-release-${fv}.noarch.rpm"
 
+  install_packages dnf "Install NVIDIA hardware drivers" akmod-nvidia xorg-x11-drv-nvidia-cuda
+
+  local nvidia_repo="https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo"
+  add_dnf_repo "NVIDIA container toolkit" "repofile" "$nvidia_repo"
+
+  # Extract and import GPG keys for the NVIDIA toolkit securely
   # shellcheck disable=SC2016
-  execute_root "Import GPG keys" bash -c '
-    repo=/etc/yum.repos.d/nvidia-container-toolkit.repo
-    awk -F= "tolower(\$1)==\"gpgkey\"{print \$2}" "$repo" | \
+  execute_root "Import NVIDIA GPG keys" bash -c '
+    repo_file="/etc/yum.repos.d/nvidia-container-toolkit.repo"
+    awk -F= "tolower(\$1)==\"gpgkey\"{print \$2}" "$repo_file" | \
       tr " " "\n" | sed "/^$/d" | sort -u | xargs -r -n1 rpm --import
   '
 
-  execute_root "Refresh DNF" dnf makecache -y -q --disablerepo="*" \
-    --enablerepo="nvidia-container-toolkit*"
-  install_packages dnf "Install NVIDIA toolkit" nvidia-container-toolkit
+  execute_root "Refresh DNF repository cache" \
+    dnf makecache -y -q --disablerepo="*" --enablerepo="nvidia-container-toolkit*"
+
+  install_packages dnf "Install NVIDIA container toolkit" nvidia-container-toolkit
 }
 
 install_apps() {
-  print_section "Installing Apps..."
+  print_section "Installing Applications..."
+
   if ! command -v flatpak &>/dev/null; then
-    install_packages dnf "Install flatpak" flatpak
+    install_packages dnf "Install flatpak daemon" flatpak
   fi
-  local fh="https://dl.flathub.org/repo/flathub.flatpakrepo"
-  execute_root "Add flathub" flatpak remote-add --if-not-exists flathub "$fh"
-  install_packages flatpak "Install apps" org.mozilla.firefox md.obsidian.Obsidian com.mattjakeman.ExtensionManager
-  execute_root "Update flatpak" flatpak update -y
-  execute "Install Zed" bash -c "curl -s -f https://zed.dev/install.sh | sh"
+
+  local flathub_repo="https://dl.flathub.org/repo/flathub.flatpakrepo"
+  execute_root "Add Flathub remote repository" flatpak remote-add --if-not-exists flathub "$flathub_repo"
+
+  install_packages flatpak "Install Flatpak applications" \
+    org.mozilla.firefox md.obsidian.Obsidian com.mattjakeman.ExtensionManager
+
+  execute_root "Update flatpak applications" flatpak update -y
+  execute "Install Zed Editor" bash -c "curl -s -f https://zed.dev/install.sh | sh"
 }
 
 configure_dotfiles() {
-  print_section "Configuring dotfiles..."
+  print_section "Configuring Dotfiles..."
+
   touch "$HOME/.bashrc"
+
+  # Ensure Starship initializes correctly in bash
   # shellcheck disable=SC2016
   local bash_init='eval "$(starship init bash)"'
   append_if_missing "$HOME/.bashrc" "starship init bash" "$bash_init"
+
+  # Copy over defined configuration files to their expected locations
   for src in "${!CFGS[@]}"; do
     IFS='|' read -r dest desc <<< "${CFGS[$src]}"
     copy_file "$src" "$dest" "${desc:-Config}"
@@ -205,17 +271,31 @@ configure_dotfiles() {
 
 post_install() {
   print_section "Finalizing Setup..."
-  execute_root "Generate AKMODS key" /usr/sbin/kmodgenca -a
-  execute_root "Import MOK key" bash -c "
-    printf 'password\npassword\n' | \\
+
+  execute_root "Generate AKMODS keys" /usr/sbin/kmodgenca -a
+
+  # Import the generated MOK key automatically. Password is set to 'password'
+  execute_root "Import MOK key for Secure Boot" bash -c "
+    printf 'password\npassword\n' | \
       mokutil --import /etc/pki/akmods/certs/public_key.der || true
   "
+
   execute_root "Remove orphaned packages" dnf autoremove -y -q
-  print_warning "Reboot required for NVIDIA. MOKManager password: 'password'"
+
+  print_warning "Reboot required to load NVIDIA drivers. MOKManager password is: 'password'"
 }
 
+# ------------------------------------------------------------------------------
+# Entrypoint & Argument Parsing
+# ------------------------------------------------------------------------------
+
 show_help() {
-  printf "Usage:\n  -h, --help\n  -d, --dotfiles-dir <dir>\n  --no-sudo\n  --debug\n"
+  printf "Usage: %s [OPTIONS]\n\n" "$0"
+  printf "Options:\n"
+  printf "  -d, --dotfiles-dir <dir>  Path to dotfiles directory (default: current)\n"
+  printf "  --no-sudo                 Run script without invoking sudo (for root/containers)\n"
+  printf "  --debug                   Enable verbose debug logging output\n"
+  printf "  -h, --help                Show this help message and exit\n"
 }
 
 parse_args() {
@@ -247,7 +327,13 @@ main() {
   fi
 
   init_os
-  for tool in "${!DEPS[@]}"; do check_tool "$tool" "${DEPS[$tool]}"; done
+
+  # Ensure essential build and runtime tools exist before proceeding
+  for tool in "${!DEPS[@]}"; do
+    check_tool "$tool" "${DEPS[$tool]}"
+  done
+
+  # Run the core setup flow
   remove_default_bloat
   install_system_packages
   install_hardware_drivers
@@ -256,5 +342,6 @@ main() {
   post_install
 }
 
+# Initialize script
 parse_args "$@"
 main
