@@ -22,6 +22,8 @@ readonly SPINNERS=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 # Utility Functions
 # ------------------------------------------------------------------------------
 
+has_command() { command -v "$1" &>/dev/null; }
+
 print_success() { printf "\r\033[%sm✓\033[0m %s\033[K\n" "${COLORS[green]}" "$1"; }
 print_error() { printf "\r\033[%sm[ERROR] %s\033[0m\033[K\n" "${COLORS[red]}" "$1"; exit 1; }
 print_warning() { printf "\n\r\033[%sm[!] %s\033[0m\033[K\n" "${COLORS[yellow]}" "$1"; }
@@ -100,7 +102,7 @@ add_dnf_repo() {
 }
 
 check_tool() {
-  command -v "$1" &>/dev/null || print_error "Missing dependency: '$1'. $2"
+  has_command "$1" || print_error "Missing dependency: '$1'. $2"
 }
 
 copy_file() {
@@ -239,7 +241,7 @@ install_hardware_drivers() {
 install_apps() {
   print_section "Installing Applications..."
 
-  if ! command -v flatpak &>/dev/null; then
+  if ! has_command flatpak; then
     install_packages dnf "Install flatpak daemon" flatpak
   fi
 
@@ -276,12 +278,12 @@ post_install() {
   execute_root "Generate AKMODS keys" /usr/sbin/kmodgenca -a
 
   # Import the generated MOK key automatically. Password is set to 'password'
-  execute_root "Import MOK key for Secure Boot" bash -c "
-    if command -v mokutil &>/dev/null; then
+  if has_command mokutil; then
+    execute_root "Import MOK key for Secure Boot" bash -c "
       printf 'password\npassword\n' | \
         mokutil --import /etc/pki/akmods/certs/public_key.der || true
-    fi
-  "
+    "
+  fi
 
   execute_root "Remove orphaned packages" dnf autoremove -y -q
 
