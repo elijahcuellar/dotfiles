@@ -4,7 +4,7 @@
 │░▀░░░▀▀▀░▀▀░░▀▀▀░▀░▀░▀░▀░▄▀░░░░▀░▀░▀▀▀░▀░░░▀▀▀░▀░▀░▀▀▀░▀▀░│
 ╚──────────────────────────────────────────────────────────╝
 
-Welcome to my dotfiles! Here, you will find the configurations and automated script I use to personalize my Fedora development environment. From automated software installation to editor configurations, this repository contains a curated collection of my favorite tools and customizations designed to enhance productivity and streamline my workflow. Feel free to explore, fork, and contribute if you find something useful or have suggestions for improvements. Happy coding!
+Welcome to my dotfiles! Here, you will find the configurations and automated script I use to personalize my Fedora development environment. From automated software installation to editor settings, this repository contains a curated collection of my favorite tools and customizations designed to enhance productivity and streamline my workflow. Feel free to explore, fork, and contribute if you find something useful or have suggestions for improvements. Happy coding!
 
 ## Usage
 
