@@ -186,7 +186,7 @@ install_apps() {
   fi
   local fh="https://dl.flathub.org/repo/flathub.flatpakrepo"
   execute_root "Add flathub" flatpak remote-add --if-not-exists flathub "$fh"
-  install_packages flatpak "Install apps" org.mozilla.firefox md.obsidian.Obsidian
+  install_packages flatpak "Install apps" org.mozilla.firefox md.obsidian.Obsidian com.mattjakeman.ExtensionManager
   execute_root "Update flatpak" flatpak update -y
   execute "Install Zed" bash -c "curl -s -f https://zed.dev/install.sh | sh"
 }
