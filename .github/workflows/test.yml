@@ -61,11 +61,39 @@ jobs:
         env:
           DOTFILES_DIR: ${{ github.workspace }}
 
+      - name: Verify Repositories
+        run: |
+          test -f /etc/yum.repos.d/gh-cli.repo
+          test -f /etc/yum.repos.d/nvidia-container-toolkit.repo
+          dnf repolist | grep -i "starship"
+          dnf repolist | grep -i "rpmfusion"
+
+      - name: Verify System Packages
+        run: |
+          rpm -q dnf5-plugins
+          rpm -q akmod-nvidia
+          rpm -q xorg-x11-drv-nvidia-cuda
+          rpm -q nvidia-container-toolkit
+
       - name: Verify CLI Tools
         run: |
           gh --version
           just --version
           starship --version
+          micro -version
+          git --version
+
+      - name: Verify Applications
+        run: |
+          flatpak info org.mozilla.firefox
+          flatpak info md.obsidian.Obsidian
+          flatpak info com.mattjakeman.ExtensionManager
+          test -f ~/.local/bin/zed
+
+      - name: Verify Fonts
+        run: |
+          fc-list | grep -i "FiraCode"
+          test -d ~/.local/share/fonts/FiraCode
 
       - name: Verify Configurations
         run: |
