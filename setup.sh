@@ -90,7 +90,8 @@ add_dnf_repo() {
   local name="$1" type="$2" url="$3"
   case "$type" in
     repofile)
-      local dest="/etc/yum.repos.d/$(basename "$url")"
+      local dest
+      dest="/etc/yum.repos.d/$(basename "$url")"
       execute_root "Add $name repository" curl -sLo "$dest" "$url"
       ;;
     copr) execute_root "Enable $name COPR repository" dnf copr enable -y "$url" ;;
