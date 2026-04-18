@@ -1,4 +1,4 @@
-```#!/usr/bin/env bash
+#!/usr/bin/env bash
 # ==============================================================================
 # Fedora Setup Script
 # Configures a fresh Fedora installation with essential tools, drivers, and apps.
@@ -132,7 +132,7 @@ download_extract() {
   local msg="$3"
 
   mkdir -p "$dest"
-  execute "$msg" bash -c "curl -s -L '$url' | tar -xJ -C '$dest'"
+  execute "$msg" bash -c "set -eo pipefail; curl -s -f -L '$url' | tar -xJ -C '$dest'"
 }
 
 # ------------------------------------------------------------------------------
