@@ -26,8 +26,9 @@ bash setup.sh
 
 ## Features
 
-- **System Tweaks:** Cleans pre-installed bloatware.
+- **Debloating:** Removes unnecessary pre-installed packages.
 - **DNF Optimization:** Configures `dnf` with `fastestmirror` and parallel downloads.
-- **Hardware Drivers:** Configures RPMFusion and sets up NVIDIA drivers and container toolkit.
+- **Drivers:** Configures RPMFusion and sets up NVIDIA drivers and container toolkit.
 - **Apps:** Installs Firefox, Obsidian, and Zed editor.
-- **CLI Tools:** Installs Starship, Git, Just, GitHub CLI, and FiraCode Nerd Font.
+- **CLI Tools:** Installs Starship, Git, Just, Micro, GitHub CLI
+- **Fonts:** Installs FiraCode Nerd Font.

@@ -146,7 +146,7 @@ install_system_packages() {
   add_dnf_repo "GitHub CLI" "repofile" "https://cli.github.com/packages/rpm/gh-cli.repo"
   add_dnf_repo "Starship" "copr" "atim/starship"
 
-  install_packages dnf "Install core tools" dnf5-plugins git just starship
+  install_packages dnf "Install core tools" dnf5-plugins git just starship micro
   install_packages dnf "Install GitHub CLI" gh --repo gh-cli
 
   local url="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz"
