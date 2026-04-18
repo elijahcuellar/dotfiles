@@ -242,7 +242,7 @@ install_apps() {
   execute_root "Add Flathub remote repository" flatpak remote-add --if-not-exists flathub "$flathub_repo"
 
   install_packages flatpak "Install Flatpak applications" \
-    org.mozilla.firefox md.obsidian.Obsidian com.mattjakeman.ExtensionManager
+    org.mozilla.firefox org.gnome.gitlab.somas.Apostrophe com.mattjakeman.ExtensionManager
 
   execute_root "Update flatpak applications" flatpak update -y
   execute "Install Zed Editor" bash -c "curl -s -f https://zed.dev/install.sh | sh"
