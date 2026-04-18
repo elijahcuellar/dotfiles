@@ -177,7 +177,7 @@ init_os() {
 remove_default_bloat() {
   print_section "Cleaning Default Bloatware..."
 
-  local pkgs=(gnome-tour gnome-connections gnome-contacts gnome-weather
+  local pkgs=(gnome-tour gnome-connections gnome-contacts gnome-weather ptyxis
               gnome-maps gnome-calendar gnome-boxes libreoffice\* firefox)
 
   execute_root "Remove pre-installed applications" dnf remove -y "${pkgs[@]}"
@@ -196,6 +196,7 @@ install_system_packages_and_drivers() {
   # Setup Repositories First
   add_dnf_repo "GitHub CLI" "repofile" "https://cli.github.com/packages/rpm/gh-cli.repo"
   add_dnf_repo "Starship" "copr" "atim/starship"
+  add_dnf_repo "Ghostty" "copr" "scottames/ghostty"
 
   local fv
   fv=$(rpm -E %fedora)
@@ -220,7 +221,7 @@ install_system_packages_and_drivers() {
 
   # Single DNF transaction for all packages and drivers
   install_packages dnf "Install core tools & hardware drivers" \
-    dnf5-plugins git just starship micro gh \
+    dnf5-plugins git just starship micro gh ghostty \
     akmod-nvidia xorg-x11-drv-nvidia-cuda nvidia-container-toolkit
 
   local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz"
