@@ -278,18 +278,18 @@ post_install() {
   execute_root "Generate AKMODS keys" /usr/sbin/kmodgenca -a
 
   # Import the generated MOK key automatically. Password is set to 'password'
-  if [[ -d /sys/firmware/efi ]]; then
-    if ! has_command mokutil; then
-      print_warning "mokutil is missing. Installing it now..."
-      install_packages dnf "Install mokutil" mokutil
-    fi
+  if ! has_command mokutil; then
+    print_warning "mokutil is missing. Installing it now..."
+    install_packages dnf "Install mokutil" mokutil
+  fi
 
+  if mokutil --sb-state &>/dev/null; then
     execute_root "Import MOK key for Secure Boot" bash -c "
       printf 'password\npassword\n' | \
         mokutil --import /etc/pki/akmods/certs/public_key.der
     "
   else
-    print_warning "EFI not detected. Skipping MOK key import."
+    print_warning "EFI variables not supported. Skipping MOK key import."
   fi
 
   execute_root "Remove orphaned packages" dnf autoremove -y -q
