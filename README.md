@@ -2,11 +2,11 @@
 ░█▄█░█▀▀░█░░░█░░░█░█░█░█░█▀▀░░░░█░░█░█░░░█▀▀░█▀▀░█░█░█░█░█▀▄░█▀█
 ░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀░▀░▀▀▀░░░░▀░░▀▀▀░░░▀░░░▀▀▀░▀▀░░▀▀▀░▀░▀░▀░▀
 
-Here, you'll find all the configurations and customizations that I use to personalize my Fedora development environment. From terminal settings to editor configurations, this repository is a collection of my favorite tools and tweaks that enhance my workflow. Feel free to explore, fork, and contribute if you find something useful or have suggestions for improvements. Happy coding!
+Here, you'll find all the configurations and customizations that I use to personalize my development environment. From terminal settings to editor configurations, this repository is a collection of my favorite tools and tweaks that enhance my workflow. Feel free to explore, fork, and contribute if you find something useful or have suggestions for improvements. Happy coding!
 
 ## Usage
 
-This repository contains an automated setup script to configure Fedora Linux.
+This repository contains my automated setup script to configure Fedora Linux.
 
 ```bash
 # Clone the repository
@@ -19,9 +19,9 @@ bash setup.sh
 
 ### Options
 
-- `-d, --dotfiles-dir <dir>`: Specify the location of the dotfiles directory if running from elsewhere.
+- `-d, --dotfiles-dir <dir>`: Specify the location of the dotfiles directory.
 - `--no-sudo`: Skip using `sudo` for commands (assumes you are already root or have permissions).
-- `--debug`: Enable debug mode to print verbose trace logs and step output directly to the terminal.
+- `--debug`: Enable debug mode to print verbose trace logs and step output.
 - `-h, --help`: Show help text.
 
 ## Features
