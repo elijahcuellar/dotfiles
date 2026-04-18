@@ -1,47 +1,33 @@
-# Dotfiles
+░█░█░█▀▀░█░░░█▀▀░█▀█░█▄█░█▀▀░░░▀█▀░█▀█░░░█▀▀░█▀▀░█▀▄░█▀█░█▀▄░█▀█
+░█▄█░█▀▀░█░░░█░░░█░█░█░█░█▀▀░░░░█░░█░█░░░█▀▀░█▀▀░█░█░█░█░█▀▄░█▀█
+░▀░▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀░▀░▀▀▀░░░░▀░░▀▀▀░░░▀░░░▀▀▀░▀▀░░▀▀▀░▀░▀░▀░▀
 
-A simple, automated setup script for my Fedora development environment.
-
-## Features
-
-- **System Cleanup**: Removes default bloatware and unnecessary pre-installed packages.
-- **CLI Utilities**: Installs `gh` and `just`.
-- **Prompt**: Installs the `starship` prompt.
-- **Typography**: Installs and caches FiraCode Nerd Font.
-- **NVIDIA GPU**: Configures RPM Fusion, proprietary NVIDIA drivers, and the NVIDIA Container Toolkit.
-- **Applications**: Installs Firefox, Obsidian, and the Zed editor.
+Here, you'll find all the configurations and customizations that I use to make my development environment efficient and personalized. From terminal settings to editor configurations, this repository is a collection of my favorite tools and tweaks that enhance my workflow. Feel free to explore, fork, and contribute if you find something useful or have suggestions for improvements. Happy coding!
 
 ## Usage
 
-Clone the repository and execute the setup script:
+This repository contains an automated setup script to configure a Fedora Linux environment.
 
 ```bash
-git clone https://github.com/elijahcuellar/dotfiles.git ~/dotfiles
-cd ~/dotfiles
-./setup.sh
+# Clone the repository
+git clone https://github.com/elijahcuellar/dotfiles.git
+cd dotfiles
+
+# Run the setup script
+bash setup.sh
 ```
 
 ### Options
 
-| Option | Description |
-| :--- | :--- |
-| `-d, --dotfiles-dir <dir>` | Specify a custom path to the dotfiles directory (default: `.`) |
-| `--no-sudo` | Execute commands without `sudo` privileges |
-| `--debug` | Enable verbose execution output |
-| `-h, --help` | Display the help menu |
+- `-d, --dotfiles-dir <dir>`: Specify the location of the dotfiles directory if running from elsewhere.
+- `--no-sudo`: Skip using `sudo` for commands (assumes you are already root or have permissions).
+- `--debug`: Enable debug mode to print verbose trace logs and step output directly to the terminal.
+- `-h, --help`: Show help text.
 
-## Post-Install
+## Features
 
-Systems with **Secure Boot** enabled require a reboot to enroll the generated AKMODS key.
-
-After rebooting, verify the key enrollment:
-
-```bash
-mokutil --test-key /etc/pki/akmods/certs/public_key.der
-```
-
-## Structure
-
-- `setup.sh`: The primary provisioning script.
-- `config/starship.toml`: Starship prompt configuration.
-- `config/zed/settings.json`: Zed editor configuration.
+- **System Tweaks:** Cleans default bloatware.
+- **DNF Optimization:** Configures `dnf` with `fastestmirror` and parallel downloads.
+- **Hardware Drivers:** Configures RPMFusion and sets up NVIDIA drivers + container toolkit.
+- **Apps:** Installs Firefox, Obsidian, and Zed Editor.
+- **CLI Tools:** Installs Starship, Git, Just, GitHub CLI, and FiraCode Nerd Font.
