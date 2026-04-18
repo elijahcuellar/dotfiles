@@ -42,12 +42,12 @@
     "default_profile": "write",
     "inline_assistant_model": {
       "provider": "copilot_chat",
-      "model": "claude-haiku-4.5",
+      "model": "gemini-3.1-pro-preview",
       "enable_thinking": true,
     },
     "default_model": {
       "provider": "copilot_chat",
-      "model": "claude-haiku-4.5",
+      "model": "gemini-3.1-pro-preview",
       "enable_thinking": true,
     },
   },
