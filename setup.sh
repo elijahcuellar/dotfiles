@@ -190,6 +190,7 @@ install_system_packages_and_drivers() {
   execute_root "Optimize DNF configuration" bash -c "
     grep -q '^fastestmirror=True' $dnf_cfg || printf 'fastestmirror=True\n' >> $dnf_cfg
     grep -q '^max_parallel_downloads=' $dnf_cfg || printf 'max_parallel_downloads=10\n' >> $dnf_cfg
+    grep -q '^install_weak_deps=' $dnf_cfg || printf 'install_weak_deps=False\n' >> $dnf_cfg
   "
 
   # Setup Repositories First
