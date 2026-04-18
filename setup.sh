@@ -64,7 +64,7 @@ install_packages() {
   case "$mgr" in
     dnf) execute_root "$msg" dnf install -y -q "$@" ;;
     flatpak) execute_root "$msg" flatpak install -y flathub "$@" ;;
-    *) print_error "Unsupported package manager '$mgr'." ;;
+    *) print_error "Unsupported manager '$mgr'. Supported: 'dnf', 'flatpak'." ;;
   esac
 }
 
@@ -77,7 +77,7 @@ add_dnf_repo() {
       execute_root "Add $name" curl -sLo "$dest" "$url"
       ;;
     copr) execute_root "Enable $name COPR" dnf copr enable -y "$url" ;;
-    *) print_error "Unsupported DNF repo type '$type'." ;;
+    *) print_error "Unsupported DNF repo type '$type'. Supported: 'repofile', 'copr'." ;;
   esac
 }
 
@@ -116,7 +116,7 @@ declare -A CFGS=(
 
 init_os() {
   local os; os=$(uname | tr '[:upper:]' '[:lower:]')
-  [[ "$os" != "linux" ]] && print_error "Supported on Linux only. Detected $os."
+  [[ "$os" != "linux" ]] && print_error "Script supported on Linux only. Detected OS: $os."
   if [[ -f /etc/os-release ]]; then
     # shellcheck source=/dev/null
     source /etc/os-release
@@ -226,13 +226,13 @@ parse_args() {
         if [[ $# -ne 0 ]]; then
           export DOTFILES_DIR="$1"
         else
-          print_error "Dir req."
+          print_error "Missing argument for directory parameter (-d/--dotfiles-dir)."
         fi
         ;;
       --no-sudo) USE_SUDO="false" ;;
       --debug) export DEBUG="true" ;;
       -h|--help) show_help; exit 0 ;;
-      *) print_error "Unrecognized arg: '$1'." ;;
+      *) print_error "Unrecognized argument: '$1'. Use -h or --help for usage information." ;;
     esac
     shift
   done
@@ -240,7 +240,7 @@ parse_args() {
 
 main() {
   [[ "${DEBUG}" == "true" ]] && set -x
-  trap '[[ $? -eq 0 ]] || print_error "Setup aborted unexpectedly."' EXIT
+  trap '[[ $? -eq 0 ]] || print_error "Setup aborted unexpectedly. Check logs for details."' EXIT
 
   if [[ -f "$DOTFILES_DIR/header.txt" ]]; then
     cat "$DOTFILES_DIR/header.txt"
