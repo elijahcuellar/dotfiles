@@ -1,59 +1,74 @@
-name: Test Setup Script
+name: CI Pipeline
 
 on:
   push:
     branches: ["main"]
     paths-ignore:
       - "**.md"
+      - ".github/workflows/update-readme.yml"
+      - "header.txt"
   pull_request:
     branches: ["main"]
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.ref != "refs/heads/main" }}
 
 permissions:
   contents: read
 
 jobs:
-  test-fedora:
-    name: Fedora E2E Test
+  lint:
+    name: Lint Scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: "."
+          ignore_names: "update_readme.sh"
+
+  e2e-test:
+    name: E2E Test (Fedora)
+    needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
       image: fedora:latest
-      # Privileged mode is often required for Flatpak and Akmods dbus/systemd interactions in CI
       options: --privileged
+    defaults:
+      run:
+        shell: bash
 
     steps:
-      - name: Checkout Repository
+      - name: Install Prerequisites
+        run: |
+          dnf install -y -q \
+            --setopt=install_weak_deps=False \
+            --setopt=fastestmirror=True \
+            git tar xz curl util-linux fontconfig
+
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Prepare Container Environment
-        run: |
-          set -euo pipefail
+      - name: Execute Setup Script
+        run: bash setup.sh --no-sudo --debug
+        env:
+          DOTFILES_DIR: ${{ github.workspace }}
 
-          # Install prerequisite utilities missing from minimal Fedora container images
-          dnf install -y --setopt=install_weak_deps=False --setopt=fastestmirror=True curl git dnf-plugins-core util-linux tar xz fontconfig
-
-      - name: Execute Provisioning Script
-        # Running with --debug ensures verbose logs in GitHub Actions for easier troubleshooting
+      - name: Verify CLI Tools
         run: |
-          set -euo pipefail
-          cd "$GITHUB_WORKSPACE"
-          ./setup.sh --debug
-
-      - name: Validate CLI Utilities Installation
-        run: |
-          set -e
           gh --version
           just --version
           starship --version
 
-      - name: Validate Dotfile Configurations
+      - name: Verify Configurations
         run: |
-          set -e
           test -f ~/.config/starship.toml
           test -f ~/.config/zed/settings.json
-          grep -q 'starship init bash' ~/.bashrc
+          grep -q "starship init bash" ~/.bashrc
