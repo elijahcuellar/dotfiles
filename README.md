@@ -31,6 +31,6 @@ bash setup.sh
 - **Debloating:** Removes unnecessary pre-installed packages.
 - **DNF Optimization:** Configures `dnf` with `fastestmirror` and parallel downloads.
 - **Drivers:** Configures RPMFusion and sets up NVIDIA drivers and container toolkit.
-- **Apps:** Installs Firefox, Obsidian, Extension Manager, and Zed editor.
-- **CLI Tools:** Installs Starship, Git, Just, Micro, GitHub CLI
+- **Apps:** Installs Firefox, Ghostty, Apostrophe, Extension Manager, and Zed editor.
+- **CLI Tools:** Installs [Starship](https://starship.rs/), Git, [Just](https://just.systems/), [Micro](https://micro-editor.github.io/), [OneDrive](https://abraunegg.github.io/), and GitHub CLI.
 - **Fonts:** Installs FiraCode Nerd Font.
