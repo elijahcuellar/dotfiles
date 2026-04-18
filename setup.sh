@@ -135,7 +135,7 @@ download_extract() {
   local msg="$3"
 
   mkdir -p "$dest"
-  execute "$msg" bash -c "set -eo pipefail; curl -s -f -L '$url' | tar -xJ -C '$dest'"
+  execute "$msg" bash -c "set -e; tmp=\$(mktemp); trap 'rm -f \"\$tmp\"' EXIT; curl -sSfL '$url' -o \"\$tmp\"; tar -xJ -f \"\$tmp\" -C '$dest'"
 }
 
 # ------------------------------------------------------------------------------
