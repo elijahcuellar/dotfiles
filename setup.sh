@@ -221,7 +221,7 @@ install_system_packages_and_drivers() {
 
   # Single DNF transaction for all packages and drivers
   install_packages dnf "Install core tools & hardware drivers" \
-    dnf5-plugins git just starship micro gh ghostty \
+    dnf5-plugins git just starship micro gh ghostty onedrive \
     akmod-nvidia xorg-x11-drv-nvidia-cuda nvidia-container-toolkit
 
   local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz"
