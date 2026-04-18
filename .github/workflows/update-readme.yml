@@ -1,0 +1,64 @@
+name: Update README
+
+on:
+  push:
+    paths:
+      - "header.txt"
+      - ".github/workflows/update-readme.yml"
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebuild README.md
+        run: |
+          cat header.txt > README.md
+          cat << "EOF" >> README.md
+
+          ## Usage
+
+          This repository contains an automated setup script to configure a Fedora Linux environment.
+
+          ```bash
+          # Clone the repository
+          git clone https://github.com/elijahcuellar/dotfiles.git
+          cd dotfiles
+
+          # Run the setup script
+          bash setup.sh
+          ```
+
+          ### Options
+
+          - `-d, --dotfiles-dir <dir>`: Specify the location of the dotfiles directory if running from elsewhere.
+          - `--no-sudo`: Skip using `sudo` for commands (assumes you are already root or have permissions).
+          - `--debug`: Enable debug mode to print verbose trace logs and step output directly to the terminal.
+          - `-h, --help`: Show help text.
+
+          ## Features
+
+          - **System Tweaks:** Cleans default bloatware.
+          - **DNF Optimization:** Configures `dnf` with `fastestmirror` and parallel downloads.
+          - **Hardware Drivers:** Configures RPMFusion and sets up NVIDIA drivers + container toolkit securely.
+          - **Apps:** Installs Firefox, Obsidian, and Zed Editor.
+          - **CLI Tools:** Installs Starship, Git, Just, GitHub CLI, and FiraCode Nerd Font.
+          EOF
+
+      - name: Commit and push if changed
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add README.md
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "docs: auto-update README.md from header.txt"
+            git push
+          else
+            echo "No changes detected in README.md"
+          fi
