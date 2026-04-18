@@ -6,7 +6,7 @@ Here, you'll find all the configurations and customizations that I use to make m
 
 ## Usage
 
-This repository contains an automated setup script to configure a Fedora Linux environment.
+This repository contains an automated setup script to configure Fedora Linux.
 
 ```bash
 # Clone the repository
@@ -26,8 +26,8 @@ bash setup.sh
 
 ## Features
 
-- **System Tweaks:** Cleans default bloatware.
+- **System Tweaks:** Cleans pre-installed bloatware.
 - **DNF Optimization:** Configures `dnf` with `fastestmirror` and parallel downloads.
-- **Hardware Drivers:** Configures RPMFusion and sets up NVIDIA drivers + container toolkit securely.
-- **Apps:** Installs Firefox, Obsidian, and Zed Editor.
+- **Hardware Drivers:** Configures RPMFusion and sets up NVIDIA drivers and container toolkit.
+- **Apps:** Installs Firefox, Obsidian, and Zed editor.
 - **CLI Tools:** Installs Starship, Git, Just, GitHub CLI, and FiraCode Nerd Font.
