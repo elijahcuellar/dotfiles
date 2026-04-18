@@ -28,6 +28,6 @@ bash setup.sh
 
 - **System Tweaks:** Cleans default bloatware.
 - **DNF Optimization:** Configures `dnf` with `fastestmirror` and parallel downloads.
-- **Hardware Drivers:** Configures RPMFusion and sets up NVIDIA drivers + container toolkit.
+- **Hardware Drivers:** Configures RPMFusion and sets up NVIDIA drivers + container toolkit securely.
 - **Apps:** Installs Firefox, Obsidian, and Zed Editor.
 - **CLI Tools:** Installs Starship, Git, Just, GitHub CLI, and FiraCode Nerd Font.
