@@ -19,11 +19,10 @@ jobs:
 
       - name: Rebuild README.md
         run: |
-          awk '/^## /{flag=1} flag' README.md > body.md
+          body=$(awk '/^## /{flag=1} flag' README.md)
           cat header.txt > README.md
           echo "" >> README.md
-          cat body.md >> README.md
-          rm body.md
+          printf "%s\n" "$body" >> README.md
 
       - name: Commit and push if changed
         run: |
