@@ -277,8 +277,10 @@ post_install() {
 
   # Import the generated MOK key automatically. Password is set to 'password'
   execute_root "Import MOK key for Secure Boot" bash -c "
-    printf 'password\npassword\n' | \
-      mokutil --import /etc/pki/akmods/certs/public_key.der || true
+    if command -v mokutil &>/dev/null; then
+      printf 'password\npassword\n' | \
+        mokutil --import /etc/pki/akmods/certs/public_key.der || true
+    fi
   "
 
   execute_root "Remove orphaned packages" dnf autoremove -y -q
