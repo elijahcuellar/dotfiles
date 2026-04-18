@@ -183,8 +183,8 @@ remove_default_bloat() {
   execute_root "Remove pre-installed applications" dnf remove -y "${pkgs[@]}"
 }
 
-install_system_packages() {
-  print_section "Installing System Packages..."
+install_system_packages_and_drivers() {
+  print_section "Installing System Packages & Hardware Drivers..."
 
   local dnf_cfg="/etc/dnf/dnf.conf"
   execute_root "Optimize DNF configuration" bash -c "
@@ -192,34 +192,16 @@ install_system_packages() {
     grep -q '^max_parallel_downloads=' $dnf_cfg || printf 'max_parallel_downloads=10\n' >> $dnf_cfg
   "
 
-  execute_root "Update DNF packages" dnf update -y -q
-
+  # Setup Repositories First
   add_dnf_repo "GitHub CLI" "repofile" "https://cli.github.com/packages/rpm/gh-cli.repo"
   add_dnf_repo "Starship" "copr" "atim/starship"
-
-  install_packages dnf "Install core tools (git, just, starship, micro)" \
-    dnf5-plugins git just starship micro
-  install_packages dnf "Install GitHub CLI" gh --repo gh-cli
-
-  local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz"
-  local font_dest="$HOME/.local/share/fonts/FiraCode"
-
-  download_extract "$font_url" "$font_dest" "Install FiraCode Nerd Font"
-  execute "Update font cache" fc-cache -r
-}
-
-install_hardware_drivers() {
-  print_section "Installing Hardware Drivers..."
 
   local fv
   fv=$(rpm -E %fedora)
   local rpmfusion_base="https://mirrors.rpmfusion.org"
-
   install_packages dnf "Install RPMFusion Repositories" \
     "${rpmfusion_base}/free/fedora/rpmfusion-free-release-${fv}.noarch.rpm" \
     "${rpmfusion_base}/nonfree/fedora/rpmfusion-nonfree-release-${fv}.noarch.rpm"
-
-  install_packages dnf "Install NVIDIA hardware drivers" akmod-nvidia xorg-x11-drv-nvidia-cuda
 
   local nvidia_repo="https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo"
   add_dnf_repo "NVIDIA container toolkit" "repofile" "$nvidia_repo"
@@ -232,10 +214,19 @@ install_hardware_drivers() {
       tr " " "\n" | sed "/^$/d" | sort -u | xargs -r -n1 rpm --import
   '
 
-  execute_root "Refresh DNF repository cache" \
-    dnf makecache -y -q --disablerepo="*" --enablerepo="nvidia-container-toolkit*"
+  # Refresh cache and update existing packages now that all repos are added
+  execute_root "Update DNF packages & refresh cache" dnf update -y -q
 
-  install_packages dnf "Install NVIDIA container toolkit" nvidia-container-toolkit
+  # Single DNF transaction for all packages and drivers
+  install_packages dnf "Install core tools & hardware drivers" \
+    dnf5-plugins git just starship micro gh \
+    akmod-nvidia xorg-x11-drv-nvidia-cuda nvidia-container-toolkit
+
+  local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.tar.xz"
+  local font_dest="$HOME/.local/share/fonts/FiraCode"
+
+  download_extract "$font_url" "$font_dest" "Install FiraCode Nerd Font"
+  execute "Update font cache" fc-cache -r
 }
 
 install_apps() {
@@ -347,8 +338,7 @@ main() {
 
   # Run the core setup flow
   remove_default_bloat
-  install_system_packages
-  install_hardware_drivers
+  install_system_packages_and_drivers
   install_apps
   configure_dotfiles
   post_install
