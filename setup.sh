@@ -20,13 +20,21 @@ print_warning() { printf "\n\r\033[%sm[!] %s\033[0m\033[K\n" "${COLORS[yellow]}"
 print_section() { printf "\n\033[1;34m==> %s\033[0m\n" "${1}"; }
 
 run_as_root() {
-  [[ "$EUID" -ne 0 ]] && [[ "$USE_SUDO" == "true" ]] && sudo "$@" || "$@"
+  if [[ "$EUID" -ne 0 ]] && [[ "$USE_SUDO" == "true" ]]; then
+    sudo "$@"
+  else
+    "$@"
+  fi
 }
 
 execute() {
   local msg="$1" tmp pid i=0; shift
   if [[ "${DEBUG}" == "true" ]]; then
-    "$@" && print_success "$msg" || print_error "$msg"
+    if "$@"; then
+      print_success "$msg"
+    else
+      print_error "$msg"
+    fi
     return
   fi
 
@@ -64,7 +72,8 @@ add_dnf_repo() {
   local name="$1" type="$2" url="$3"
   case "$type" in
     repofile)
-      local dest="/etc/yum.repos.d/$(basename "$url")"
+      local dest
+      dest="/etc/yum.repos.d/$(basename "$url")"
       execute_root "Add $name" curl -sLo "$dest" "$url"
       ;;
     copr) execute_root "Enable $name COPR" dnf copr enable -y "$url" ;;
@@ -109,8 +118,11 @@ init_os() {
   local os; os=$(uname | tr '[:upper:]' '[:lower:]')
   [[ "$os" != "linux" ]] && print_error "Supported on Linux only. Detected $os."
   if [[ -f /etc/os-release ]]; then
+    # shellcheck source=/dev/null
     source /etc/os-release
-    [[ "${ID:-}" != "fedora" ]] && print_warning "Optimized for Fedora." || true
+    if [[ "${ID:-}" != "fedora" ]]; then
+      print_warning "Optimized for Fedora."
+    fi
   fi
 }
 
@@ -155,6 +167,7 @@ install_hardware_drivers() {
   local repo="https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo"
   add_dnf_repo "NVIDIA toolkit" "repofile" "$repo"
 
+  # shellcheck disable=SC2016
   execute_root "Import GPG keys" bash -c '
     repo=/etc/yum.repos.d/nvidia-container-toolkit.repo
     awk -F= "tolower(\$1)==\"gpgkey\"{print \$2}" "$repo" | \
@@ -181,6 +194,7 @@ install_apps() {
 configure_dotfiles() {
   print_section "Configuring dotfiles..."
   touch "$HOME/.bashrc"
+  # shellcheck disable=SC2016
   local bash_init='eval "$(starship init bash)"'
   append_if_missing "$HOME/.bashrc" "starship init bash" "$bash_init"
   for src in "${!CFGS[@]}"; do
@@ -208,7 +222,12 @@ parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -d|--dotfiles-dir)
-        shift; [[ $# -ne 0 ]] && export DOTFILES_DIR="$1" || print_error "Dir req."
+        shift
+        if [[ $# -ne 0 ]]; then
+          export DOTFILES_DIR="$1"
+        else
+          print_error "Dir req."
+        fi
         ;;
       --no-sudo) USE_SUDO="false" ;;
       --debug) export DEBUG="true" ;;
