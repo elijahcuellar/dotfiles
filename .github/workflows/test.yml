@@ -65,7 +65,8 @@ jobs:
         run: |
           test -f /etc/yum.repos.d/gh-cli.repo
           test -f /etc/yum.repos.d/nvidia-container-toolkit.repo
-          dnf repolist | grep -i "starship"
+          dnf repolist | grep -i "atim:starship"
+          dnf repolist | grep -i "scottames:ghostty"
           dnf repolist | grep -i "rpmfusion"
 
       - name: Verify System Packages
@@ -77,16 +78,18 @@ jobs:
 
       - name: Verify CLI Tools
         run: |
+          git --version
           gh --version
           just --version
           starship --version
           micro -version
-          git --version
+          onedrive --version
+          ghostty --version
 
       - name: Verify Applications
         run: |
           flatpak info org.mozilla.firefox
-          flatpak info md.obsidian.Obsidian
+          flatpak info org.gnome.gitlab.somas.Apostrophe
           flatpak info com.mattjakeman.ExtensionManager
           test -f ~/.local/bin/zed
 
