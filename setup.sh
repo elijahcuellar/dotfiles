@@ -268,6 +268,10 @@ configure_dotfiles() {
 post_install() {
   print_section "Finalizing Setup..."
 
+# shellcheck disable=SC2086
+  execute "Enable OneDrive sync service" systemctl --user enable onedrive.service \
+  	&& loginctl enable-linger $USER
+
   execute_root "Generate AKMODS keys" /usr/sbin/kmodgenca -a
 
   # Import the generated MOK key automatically. Password is set to 'password'
